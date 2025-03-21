@@ -122,6 +122,8 @@ private:
     static size_t FREELIST_INDEX(size_t bytes) {
         return (((bytes) + __ALIGN - 1) / __ALIGN - 1);
     }
+    
+    static std::mutex mutex;
 
     // 返回一个大小为n的对象， 并可能加入大小为n的其他区块到free list
     static void *refill(size_t n);
@@ -134,7 +136,6 @@ private:
     static char *start_free; // 内存池开始位置。只在chunk_alloc()中变化
     static char *end_free; // 内存池结束位置。 只在chunk_alloc()中变化
     static size_t heap_size;
-    static std::mutex mutex; // 互斥锁
 
 public:
     static void *allocate(size_t n) {
@@ -143,25 +144,18 @@ public:
         if (n > __MAX_BYTES) return malloc_alloc::allocate(n);
         
         my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
-        
+
         if constexpr (threads) {
-            mutex.lock();
+            std::lock_guard<std::mutex> lock(mutex);
         }
 
         result = *my_free_list;
         if (result == nullptr) {
-        // 没找到可用的free list, 准备重写填充free list
-            void *r = refill(ROUND_UP(n));
-            if constexpr (threads) {
-                mutex.unlock();
-            }
+            void* r = refill(ROUND_UP(n));
             return r;
         }
         *my_free_list = result->free_list_link;
         
-        if constexpr (threads) {
-            mutex.unlock();
-        }
         return result;
     }
 
@@ -173,23 +167,132 @@ public:
             malloc_alloc::deallocate(p, n);
             return;
         }
-        // 寻找对应的free list
-        my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
         
         if constexpr (threads) {
-            mutex.lock();
+            std::lock_guard<std::mutex> lock(mutex);
         }
-
-        // 调整free list, 回收区域
+        
+        my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
         q->free_list_link = *my_free_list;
         *my_free_list = q;
-        
-        if constexpr (threads) {
-            mutex.unlock();
-        }
     }
-    static void *reallocate(void* p, size_t old_sz, size_t new_sz);
+
+    static void* reallocate(void* p, size_t old_sz, size_t new_sz) {
+        void* result;
+        size_t copy_sz;
+        
+        if (old_sz > __MAX_BYTES && new_sz > __MAX_BYTES) {
+            return malloc_alloc::reallocate(p, old_sz, new_sz);
+        }
+
+        if (ROUND_UP(old_sz) == ROUND_UP(new_sz)) return p;
+
+        result = allocate(new_sz);
+        copy_sz = new_sz > old_sz ? old_sz : new_sz;
+        std::memcpy(result, p, copy_sz);
+        deallocate(p, old_sz);
+        return result;
+    }
 };
+
+// 静态成员定义
+template <bool threads, int inst>
+std::mutex __default_alloc_template<threads, inst>::mutex;
+
+// 定义分配器类型
+using default_alloc = __default_alloc_template<false, 0>;  // 单线程版本
+using thread_safe_alloc = __default_alloc_template<true, 0>;  // 多线程版本
+
+// 简单的分配器封装
+template<class Tp, class Alloc>
+class simple_alloc {
+public:
+    static Tp* allocate(size_t n) {
+        return 0 == n ? 0 : static_cast<Tp*>(Alloc::allocate(n * sizeof(Tp)));
+    }
+    static Tp* allocate(void) {
+        return static_cast<Tp*>(Alloc::allocate(sizeof(Tp)));
+    }
+    static void deallocate(Tp* p, size_t n) {
+        if (0 != n) Alloc::deallocate(p, n * sizeof(Tp));
+    }
+    static void deallocate(Tp* p) {
+        Alloc::deallocate(p, sizeof(Tp));
+    }
+};
+
+// 标准分配器接口
+template <typename Tp, typename Alloc = default_alloc>  // 默认使用单线程版本
+class allocator {
+    using _Alloc = Alloc;  // 使用用户指定的分配器
+public:
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using pointer = Tp*;
+    using const_pointer = const Tp*;
+    using reference = Tp&;
+    using const_reference = const Tp&;
+    using value_type = Tp;
+
+    template <class Tp1> struct rebind {
+        using other = allocator<Tp1, Alloc>;  // 保持相同的分配器类型
+    };
+
+    allocator() noexcept {}
+    allocator(const allocator&) noexcept {}
+    template <class Tp1> allocator(const allocator<Tp1, Alloc>&) noexcept {}
+    ~allocator() noexcept {}
+
+    pointer address(reference x) const { return &x; }
+    const_pointer address(const_reference x) const { return &x; }
+
+    // n 可以为0
+    pointer allocate(size_type n, const void* = nullptr) {
+        return n != 0 ? static_cast<pointer>(_Alloc::allocate(n * sizeof(Tp))) : nullptr;
+    }
+
+    // p 不能为nullptr
+    void deallocate(pointer p, size_type n) {
+        _Alloc::deallocate(p, n * sizeof(Tp));
+    }
+
+    size_type max_size() const noexcept {
+        return size_t(-1) / sizeof(Tp);
+    }
+
+    void construct(pointer p, const Tp& val) {
+        new(p) Tp(val);
+    }
+    void destroy(pointer p) {
+        p->~Tp();
+    }
+};
+
+// void特化版本
+template<typename Alloc>
+class allocator<void, Alloc> {
+public:
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using pointer = void*;
+    using const_pointer = const void*;
+    using value_type = void;
+
+    template <typename Tp1> struct rebind {
+        using other = allocator<Tp1, Alloc>;
+    };
+};
+
+// 分配器比较操作符
+template <typename T1, typename T2, typename Alloc>
+inline bool operator==(const allocator<T1, Alloc>&, const allocator<T2, Alloc>&) {
+    return true;
+}
+
+template <typename T1, typename T2, typename Alloc>
+inline bool operator!=(const allocator<T1, Alloc>&, const allocator<T2, Alloc>&) {
+    return false;
+}
 
 template<bool threads, int inst>
 char *__default_alloc_template<threads, inst>::start_free = nullptr; 
@@ -201,10 +304,8 @@ template<bool threads, int inst>
 size_t __default_alloc_template<threads, inst>::heap_size = 0;
 
 template<bool threads, int inst>
-std::array<typename __default_alloc_template<threads, inst>::obj* volatile, __NFREELISTS> __default_alloc_template<threads, inst>::free_list = {0}; //定义
-
-template<bool threads, int inst>
-std::mutex __default_alloc_template<threads, inst>::mutex;
+std::array<typename __default_alloc_template<threads, inst>::obj* volatile, __NFREELISTS> 
+__default_alloc_template<threads, inst>::free_list = {0}; //定义
 
 template <bool threads, int inst>
 void* __default_alloc_template<threads, inst>::refill(size_t n) {
@@ -241,7 +342,6 @@ void* __default_alloc_template<threads, inst>::refill(size_t n) {
 
 template <bool threads, int inst>
 char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nobjs) {
-
     char* result;
     size_t total_bytes = size * nobjs;
     size_t bytes_left = end_free - start_free;
@@ -289,119 +389,6 @@ char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nob
         return chunk_alloc(size, nobjs);
     }
     return nullptr;
-}
-
-template <bool threads, int inst>
-void* __default_alloc_template<threads, inst>::reallocate(void* p, size_t old_sz, size_t new_sz) {
-    void* result;
-    size_t copy_sz;
-    
-    // 如果都比Max bytes大 调用一级分配器
-    if (old_sz > __MAX_BYTES && new_sz > __MAX_BYTES) {
-        return malloc_alloc::reallocate(p, old_sz, new_sz);
-    }
-
-    // 如果下一个位置对齐 不用重新分配
-    if (ROUND_UP(old_sz) == ROUND_UP(new_sz)) return p;
-
-    result = allocate(new_sz);
-    copy_sz = new_sz > old_sz ? old_sz : new_sz;
-    std::memcpy(result, p, copy_sz);
-    deallocate(p, old_sz);
-    return result;
-}
-
-// 简单的分配器封装
-template<class Tp, class Alloc>
-class simple_alloc {
-public:
-    static Tp* allocate(size_t n) {
-        return 0 == n ? 0 : static_cast<Tp*>(Alloc::allocate(n * sizeof(Tp)));
-    }
-    static Tp* allocate(void) {
-        return static_cast<Tp*>(Alloc::allocate(sizeof(Tp)));
-    }
-    static void deallocate(Tp* p, size_t n) {
-        if (0 != n) Alloc::deallocate(p, n * sizeof(Tp));
-    }
-    static void deallocate(Tp* p) {
-        Alloc::deallocate(p, sizeof(Tp));
-    }
-};
-
-using default_alloc = __default_alloc_template<false, 0>;
-
-// 标准分配器接口
-template <class Tp>
-class allocator {
-    using _Alloc = default_alloc;  // 使用默认的二级分配器
-public:
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
-    using pointer = Tp*;
-    using const_pointer = const Tp*;
-    using reference = Tp&;
-    using const_reference = const Tp&;
-    using value_type = Tp;
-
-    template <class Tp1> struct rebind {
-        using other = allocator<Tp1>;
-    };
-
-    allocator() noexcept {}
-    allocator(const allocator&) noexcept {}
-    template <class Tp1> allocator(const allocator<Tp1>&) noexcept {}
-    ~allocator() noexcept {}
-
-    pointer address(reference x) const { return &x; }
-    const_pointer address(const_reference x) const { return &x; }
-
-    // n 可以为0
-    pointer allocate(size_type n, const void* = nullptr) {
-        return n != 0 ? static_cast<pointer>(_Alloc::allocate(n * sizeof(Tp))) : nullptr;
-    }
-
-    // p 不能为nullptr
-    void deallocate(pointer p, size_type n) {
-        _Alloc::deallocate(p, n * sizeof(Tp));
-    }
-
-    size_type max_size() const noexcept {
-        return size_t(-1) / sizeof(Tp);
-    }
-
-    void construct(pointer p, const Tp& val) {
-        new(p) Tp(val);
-    }
-    void destroy(pointer p) {
-        p->~Tp();
-    }
-};
-
-// void特化版本
-template<>
-class allocator<void> {
-public:
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
-    using pointer = void*;
-    using const_pointer = const void*;
-    using value_type = void;
-
-    template <class Tp1> struct rebind {
-        using other = allocator<Tp1>;
-    };
-};
-
-// 分配器比较操作符
-template <class T1, class T2>
-inline bool operator==(const allocator<T1>&, const allocator<T2>&) {
-    return true;
-}
-
-template <class T1, class T2>
-inline bool operator!=(const allocator<T1>&, const allocator<T2>&) {
-    return false;
 }
 
 } // namespace mstl
