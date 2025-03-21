@@ -210,20 +210,25 @@ template <bool threads, int inst>
 void* __default_alloc_template<threads, inst>::refill(size_t n) {
     int nobjs = 20;
     char *chunk = chunk_alloc(n, nobjs);
+    if (chunk == nullptr) {
+        return nullptr;
+    }
+    
     obj* volatile *my_free_list;
     obj* result;
     obj* current_obj;
     obj* next_obj;
-    int i;
+    int i; 
     
     if (nobjs == 1) return chunk;
     
     my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
-    result = reinterpret_cast<obj*>(chunk);
-    *my_free_list = next_obj = reinterpret_cast<obj*>(chunk + n);
+    result = static_cast<obj*>(static_cast<void*>(chunk));
+    *my_free_list = next_obj = static_cast<obj*>(static_cast<void*>(chunk + n));
+    
     for (i = 1; ; ++i) {
         current_obj = next_obj;
-        next_obj = reinterpret_cast<obj*>(reinterpret_cast<char*>(current_obj) + n);
+        next_obj = static_cast<obj*>(static_cast<void*>(reinterpret_cast<char*>(current_obj) + n));
         if (nobjs - 1 == i) {
             current_obj->free_list_link = nullptr;
             break;
@@ -263,7 +268,7 @@ char* __default_alloc_template<threads, inst>::chunk_alloc(size_t size, int& nob
 
         start_free = static_cast<char*>(malloc(bytes_to_get));
         if (start_free == nullptr) {
-            int i;
+            size_t i;
             obj* volatile *my_free_list, *p;
             
             for (i = size; i <= __MAX_BYTES; i += __ALIGN) {

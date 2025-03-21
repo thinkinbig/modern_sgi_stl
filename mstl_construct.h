@@ -20,7 +20,7 @@ void destroy(T* pointer) {
 }
 
 template <typename ForwardIterator>
-void __destroy_aux(ForwardIterator first, ForwardIterator last, std::true_type) {}
+void __destroy_aux([[maybe_unused]] ForwardIterator first, [[maybe_unused]] ForwardIterator last, std::true_type) {}
 
 template <typename ForwardIterator>
 void __destroy_aux(ForwardIterator first, ForwardIterator last, std::false_type) {
