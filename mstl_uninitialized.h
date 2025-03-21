@@ -61,7 +61,7 @@ namespace mstl {
         ForwardIterator cur = first;
         try {
             for (; n > 0; --n, ++cur) {
-                mstl::construct(&*cur, std::forward<T>(x));
+                mstl::construct(&*cur, x);
             }
             return cur;
         } catch (...) {
@@ -79,6 +79,35 @@ namespace mstl {
     ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, T&& x) {
         using value_type = typename std::iterator_traits<ForwardIterator>::value_type;
         return __uninitialized_fill_n(first, n, std::forward<T>(x), static_cast<value_type*>(nullptr));
+    }
+
+    template <typename ForwardIterator, typename T>
+    void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last, T&& x, std::false_type) {
+        ForwardIterator curr = first;
+        try {
+            for (; curr != last; ++curr) {
+                mstl::construct(&*curr, x);  // 使用左值
+            }
+        } catch (...) {
+            mstl::destroy(first, curr);
+            throw;
+        }
+    }
+
+    template <typename ForwardIterator, typename T>
+    void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last, T&& x, std::true_type) {
+        std::fill(first, last, x);
+    }
+
+    template <typename ForwardIterator, typename T, typename U>
+    void __uninitialized_fill(ForwardIterator first, ForwardIterator last, T&& x, U*) {
+        return __uninitialized_fill_aux(first, last, std::forward<T>(x), std::is_trivially_copyable<U>());
+    }
+
+    template <typename ForwardIterator, typename T>
+    void uninitialized_fill(ForwardIterator first, ForwardIterator last, T&& x) {
+        using value_type = typename std::iterator_traits<ForwardIterator>::value_type;
+        __uninitialized_fill(first, last, std::forward<T>(x), static_cast<value_type*>(nullptr));
     }
 
 } // namespace mstl

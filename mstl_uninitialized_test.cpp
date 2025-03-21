@@ -30,42 +30,25 @@ private:
     int value;
 };
 
-void test_pod_types() {
-    cout << "\n=== 测试POD类型 ===" << endl;
+void test_uninitialized_copy() {
+    cout << "\n=== 测试 uninitialized_copy ===" << endl;
     
-    // 测试int数组
-    int src[5] = {1, 2, 3, 4, 5};
-    int* dest = static_cast<int*>(::operator new(sizeof(int) * 5));
+    // 测试POD类型
+    cout << "\n测试POD类型:" << endl;
+    int src_pod[5] = {1, 2, 3, 4, 5};
+    int* dest_pod = static_cast<int*>(::operator new(sizeof(int) * 5));
     
-    cout << "测试 uninitialized_copy:" << endl;
-    mstl::uninitialized_copy(src, src + 5, dest);
+    mstl::uninitialized_copy(src_pod, src_pod + 5, dest_pod);
     cout << "复制后的值: ";
     for(int i = 0; i < 5; ++i) {
-        cout << dest[i] << " ";
+        cout << dest_pod[i] << " ";
     }
     cout << endl;
-    ::operator delete(dest);
+    ::operator delete(dest_pod);
     
-    // 测试fill_n
-    dest = static_cast<int*>(::operator new(sizeof(int) * 5));
-    cout << "\n测试 uninitialized_fill_n:" << endl;
-    mstl::uninitialized_fill_n(dest, 5, 42);
-    cout << "填充后的值: ";
-    for(int i = 0; i < 5; ++i) {
-        cout << dest[i] << " ";
-    }
-    cout << endl;
-    ::operator delete(dest);
-}
-
-void test_non_pod_types() {
-    cout << "\n=== 测试非POD类型 ===" << endl;
-    
-    // 准备源数组
+    // 测试非POD类型
+    cout << "\n测试非POD类型:" << endl;
     TestClass src[3] = {TestClass(1), TestClass(2), TestClass(3)};
-    
-    // 测试 uninitialized_copy
-    cout << "\n测试 uninitialized_copy:" << endl;
     void* memory = ::operator new(sizeof(TestClass) * 3);
     TestClass* dest = static_cast<TestClass*>(memory);
     
@@ -80,11 +63,26 @@ void test_non_pod_types() {
     // 清理对象和内存
     mstl::destroy(dest, dest + 3);
     ::operator delete(memory);
+}
+
+void test_uninitialized_fill_n() {
+    cout << "\n=== 测试 uninitialized_fill_n ===" << endl;
     
-    // 测试 uninitialized_fill_n
-    cout << "\n测试 uninitialized_fill_n:" << endl;
-    memory = ::operator new(sizeof(TestClass) * 3);
-    dest = static_cast<TestClass*>(memory);
+    // 测试POD类型
+    cout << "\n测试POD类型:" << endl;
+    int* dest_pod = static_cast<int*>(::operator new(sizeof(int) * 5));
+    mstl::uninitialized_fill_n(dest_pod, 5, 42);
+    cout << "填充后的值: ";
+    for(int i = 0; i < 5; ++i) {
+        cout << dest_pod[i] << " ";
+    }
+    cout << endl;
+    ::operator delete(dest_pod);
+    
+    // 测试非POD类型
+    cout << "\n测试非POD类型:" << endl;
+    void* memory = ::operator new(sizeof(TestClass) * 3);
+    TestClass* dest = static_cast<TestClass*>(memory);
     
     cout << "使用左值填充:" << endl;
     TestClass val(42);
@@ -118,11 +116,63 @@ void test_non_pod_types() {
     ::operator delete(memory);
 }
 
-int main() {
-    cout << "开始测试 mstl::uninitialized_copy 和 mstl::uninitialized_fill_n" << endl;
+void test_uninitialized_fill() {
+    cout << "\n=== 测试 uninitialized_fill ===" << endl;
     
-    test_pod_types();
-    test_non_pod_types();
+    // 测试POD类型
+    cout << "\n测试POD类型:" << endl;
+    int* dest_pod = static_cast<int*>(::operator new(sizeof(int) * 5));
+    mstl::uninitialized_fill(dest_pod, dest_pod + 5, 99);
+    cout << "填充后的值: ";
+    for(int i = 0; i < 5; ++i) {
+        cout << dest_pod[i] << " ";
+    }
+    cout << endl;
+    ::operator delete(dest_pod);
+    
+    // 测试非POD类型
+    cout << "\n测试非POD类型:" << endl;
+    void* memory = ::operator new(sizeof(TestClass) * 4);
+    TestClass* dest = static_cast<TestClass*>(memory);
+    
+    cout << "使用左值填充:" << endl;
+    TestClass val(77);
+    mstl::uninitialized_fill(dest, dest + 4, val);
+    
+    cout << "\n填充后的值: ";
+    for(int i = 0; i < 4; ++i) {
+        cout << dest[i].getValue() << " ";
+    }
+    cout << endl;
+    
+    // 清理对象和内存
+    mstl::destroy(dest, dest + 4);
+    ::operator delete(memory);
+    
+    // 测试右值填充
+    cout << "\n使用右值填充:" << endl;
+    memory = ::operator new(sizeof(TestClass) * 4);
+    dest = static_cast<TestClass*>(memory);
+    
+    mstl::uninitialized_fill(dest, dest + 4, TestClass(200));
+    
+    cout << "\n填充后的值: ";
+    for(int i = 0; i < 4; ++i) {
+        cout << dest[i].getValue() << " ";
+    }
+    cout << endl;
+    
+    // 清理对象和内存
+    mstl::destroy(dest, dest + 4);
+    ::operator delete(memory);
+}
+
+int main() {
+    cout << "开始测试 mstl::uninitialized 系列函数" << endl;
+    
+    test_uninitialized_copy();
+    test_uninitialized_fill_n();
+    test_uninitialized_fill();
     
     cout << "\n所有测试完成" << endl;
     return 0;
