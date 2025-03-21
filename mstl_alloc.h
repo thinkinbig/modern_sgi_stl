@@ -401,5 +401,5 @@ inline bool operator!=(const allocator<T1>&, const allocator<T2>&) {
 
 } // namespace mstl
 
-#endif
+#endif // __MSGI_STL_INTERNAL_ALLOC_H
 

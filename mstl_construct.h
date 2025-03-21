@@ -1,5 +1,5 @@
-#ifndef MSTL_CONSTRUCT_H
-#define MSTL_CONSTRUCT_H
+#ifndef __MSGI_STL_INTERNAL_CONSTRUCT_H
+#define __MSGI_STL_INTERNAL_CONSTRUCT_H
 
 #include <new>
 #include <type_traits>
@@ -29,14 +29,15 @@ void __destroy_aux(ForwardIterator first, ForwardIterator last, std::false_type)
     }
 }
 
-template <typename ForwardIterator>
-void destroy(ForwardIterator first, ForwardIterator last) {
-    __destroy_aux(first, last, std::is_trivially_destructible<typename std::iterator_traits<ForwardIterator>::value_type>());
-}
-
 template <typename ForwardIterator, typename T>
 void __destroy(ForwardIterator first, ForwardIterator last, T*) {
     __destroy_aux(first, last, std::is_trivially_destructible<T>());
+}
+
+template <typename ForwardIterator>
+void destroy(ForwardIterator first, ForwardIterator last) {
+    using value_type = typename std::iterator_traits<ForwardIterator>::value_type;
+    __destroy(first, last, static_cast<value_type*>(nullptr));
 }
 
 void destroy([[maybe_unused]] char*) {}
@@ -46,4 +47,4 @@ void destroy([[maybe_unused]] wchar_t*) {}
 } // namespace mstl
 
 
-#endif // MSTL_CONSTRUCT_H
+#endif // __MSGI_STL_INTERNAL_CONSTRUCT_H
