@@ -26,7 +26,9 @@ concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
 template <typename T>
 concept TriviallyDestructible = std::is_trivially_destructible_v<T>;
 
-// 迭代器相关合约
+// 这里需要修改
+// 暂时使用stl的迭代器概念
+// 后期需要修改为mstl的迭代器概念
 template <typename I>
 concept InputIterator = std::input_iterator<I>;
 
@@ -41,6 +43,9 @@ concept BidirectionalIterator = std::bidirectional_iterator<I>;
 
 template <typename I>
 concept RandomAccessIterator = std::random_access_iterator<I>;
+
+template <typename I>
+concept ContiguousIterator = std::contiguous_iterator<I>;
 
 // 容器相关合约
 template <typename C>

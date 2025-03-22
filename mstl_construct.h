@@ -4,48 +4,61 @@
 #include <new>
 #include <type_traits>
 #include <iterator>
+#include "mstl_iterator_traits.h"
 #include "mstl_concepts.h"
 
 namespace mstl {
 
-// 全局函数
+// 构造对象函数
 template <typename T1, typename... Args>
-requires ConstructibleFrom<T1, Args...>
-void construct(T1* p, Args&&... args) {
-    new (p) T1(std::forward<Args>(args)...);
+inline void construct(T1* p, Args&&... args) {
+    ::new ((void*)p) T1(std::forward<Args>(args)...);
 }
 
-template <Destructible T>
-void destroy(T* pointer) {
+// 销毁单个对象函数
+template <typename T>
+inline void destroy(T* pointer) {
     pointer->~T();
 }
 
-template <ForwardIterator ForwardIterator>
-void __destroy_aux([[maybe_unused]] ForwardIterator first, [[maybe_unused]] ForwardIterator last, std::true_type) {}
+// 销毁迭代器范围内对象 - 特化版本（可平凡销毁的类型）
+template <InputIterator I>
+inline void __destroy_aux([[maybe_unused]]I first, [[maybe_unused]]I last, ::std::true_type) {
+    // 平凡析构类型不需要显式调用析构函数
+}
 
-template <ForwardIterator ForwardIterator>
-void __destroy_aux(ForwardIterator first, ForwardIterator last, std::false_type) {
+// 销毁迭代器范围内对象 - 一般版本
+template <InputIterator I>
+inline void __destroy_aux(I first, I last, ::std::false_type) {
     for (; first != last; ++first) {
         destroy(&*first);
     }
 }
 
-template <ForwardIterator ForwardIterator, typename T>
-void __destroy(ForwardIterator first, ForwardIterator last, T*) {
-    __destroy_aux(first, last, std::is_trivially_destructible<T>());
+// 基于值类型选择合适的销毁方式
+template <InputIterator I, typename T>
+inline void __destroy(I first, I last, T*) {
+    using trivial_destructor = typename ::std::is_trivially_destructible<T>;
+    __destroy_aux(first, last, trivial_destructor());
 }
 
-template <ForwardIterator ForwardIterator>
-void destroy(ForwardIterator first, ForwardIterator last) {
-    using value_type = typename std::iterator_traits<ForwardIterator>::value_type;
+// 统一的迭代器范围销毁接口
+template <InputIterator I>
+inline void destroy(I first, I last) {
+    using value_type = typename iterator_traits<I>::value_type;
     __destroy(first, last, static_cast<value_type*>(nullptr));
 }
 
-void destroy([[maybe_unused]] char*) {}
+// 特化版本：char和wchar_t
+inline void destroy(char*, char*) {}
+inline void destroy(wchar_t*, wchar_t*) {}
 
-void destroy([[maybe_unused]] wchar_t*) {}
+// 单个对象char版本
+inline void destroy(char*) {}
+
+// 单个对象wchar_t版本
+inline void destroy(wchar_t*) {}
 
 } // namespace mstl
-
 
 #endif // __MSGI_STL_INTERNAL_CONSTRUCT_H
