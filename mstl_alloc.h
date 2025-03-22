@@ -7,6 +7,7 @@
 #include <cstring>
 #include <array>
 #include <mutex>
+#include "mstl_concepts.h"
 
 namespace mstl
 {
@@ -264,6 +265,11 @@ namespace mstl
         }
     };
 
+    // 静态断言，确保simple_alloc满足SimpleAllocator合约
+    template <class Tp, class Alloc>
+    inline constexpr bool check_simple_alloc = SimpleAllocator<simple_alloc<Tp, Alloc>, Tp>;
+    static_assert(check_simple_alloc<int, default_alloc>, "simple_alloc must satisfy SimpleAllocator concept");
+
     // 标准分配器接口
     template <typename Tp, typename Alloc = default_alloc> // 默认使用单线程版本
     class allocator
@@ -319,6 +325,11 @@ namespace mstl
             p->~Tp();
         }
     };
+
+    // 静态断言，确保allocator满足StandardAllocator合约
+    template <typename Tp, typename Alloc>
+    inline constexpr bool check_standard_allocator = StandardAllocator<allocator<Tp, Alloc>>;
+    static_assert(check_standard_allocator<int, default_alloc>, "allocator must satisfy StandardAllocator concept");
 
     // void特化版本
     template <typename Alloc>
@@ -437,7 +448,7 @@ namespace mstl
                 *my_free_list = head;
             }
 
-            start_free = static_cast<char *>(malloc(bytes_to_get));
+            start_free = static_cast<char *>(std::malloc(bytes_to_get));
             if (start_free == nullptr)
             {
                 size_t i;

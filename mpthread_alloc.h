@@ -9,6 +9,8 @@
 #include <atomic>
 #include <vector>
 #include <memory>
+#include "mstl_alloc.h"
+#include "mstl_concepts.h"
 
 namespace mstl
 {
@@ -18,13 +20,22 @@ namespace mstl
 
     // Forward declarations
     template <size_t _Max_size>
-    class PthreadAllocator;
+    class PthreadAllocatorTemplate;
 
     // Aligned memory block structure
     struct alignas(DEFAULT_ALIGNMENT) MemoryBlock
     {
         MemoryBlock *next;
     };
+
+    namespace detail {
+        inline size_t align_up(size_t n) {
+            return (n + DEFAULT_ALIGNMENT - 1) & ~(DEFAULT_ALIGNMENT - 1);
+        }
+        inline size_t size_to_index(size_t size) {
+            return (size - 1) / DEFAULT_ALIGNMENT;
+        }
+    }
 
     // Per-thread state for memory management
     template <size_t _Max_size = MAX_BYTES>
@@ -46,7 +57,8 @@ namespace mstl
         // Allocate memory of size n
         void *allocate(size_t n)
         {
-            const size_t index = (n - 1) / DEFAULT_ALIGNMENT;
+            const size_t index = detail::size_to_index(n);
+            
             // Try to get a block from the free list
             MemoryBlock *block = free_lists[index].load(std::memory_order_relaxed);
 
@@ -76,7 +88,7 @@ namespace mstl
             if (!p)
                 return;
 
-            const size_t index = (n - 1) / DEFAULT_ALIGNMENT;
+            const size_t index = detail::size_to_index(n);
             MemoryBlock *block = static_cast<MemoryBlock *>(p);
 
             // Add block to free list with atomic operations
@@ -94,12 +106,12 @@ namespace mstl
         // Refill free list for size n
         void *refill(size_t n);
 
-        friend class PthreadAllocator<_Max_size>;
+        friend class PthreadAllocatorTemplate<_Max_size>;
     };
 
     // Main allocator class
     template <size_t _Max_size = MAX_BYTES>
-    class PthreadAllocator
+    class PthreadAllocatorTemplate
     {
     private:
         using ThreadState = PthreadAllocPerThreadState<_Max_size>;
@@ -138,7 +150,6 @@ namespace mstl
         // Get current thread's state, creating if necessary
         static ThreadState *get_thread_state()
         {
-
             // Ensure key is initialized
             std::call_once(key_init_flag, initialize_key);
 
@@ -175,7 +186,6 @@ namespace mstl
         // Allocate memory of size n
         static void *allocate(size_t n)
         {
-
             // If n is too large, use standard allocator
             if (n > _Max_size)
             {
@@ -183,11 +193,10 @@ namespace mstl
             }
 
             // Round up to alignment multiple
-            n = (n + DEFAULT_ALIGNMENT - 1) & ~(DEFAULT_ALIGNMENT - 1);
+            n = detail::align_up(n);
 
             // Delegate to thread-local state
             ThreadState *state = get_thread_state();
-
             return state->allocate(n);
         }
 
@@ -205,7 +214,7 @@ namespace mstl
             }
 
             // Round up to alignment multiple
-            n = (n + DEFAULT_ALIGNMENT - 1) & ~(DEFAULT_ALIGNMENT - 1);
+            n = detail::align_up(n);
 
             // Delegate to thread-local state
             get_thread_state()->deallocate(p, n);
@@ -214,7 +223,6 @@ namespace mstl
         // Allocate chunk of memory from global pool
         static char *chunk_allocate(size_t size, size_t &adjustment)
         {
-
             std::lock_guard<std::mutex> lock(chunk_mutex);
 
             char *result = nullptr;
@@ -245,7 +253,7 @@ namespace mstl
             {
                 // Determine which free list to add this memory to
                 size_t leftover_size = end_free - start_free;
-                size_t index = (leftover_size - 1) / DEFAULT_ALIGNMENT;
+                size_t index = detail::size_to_index(leftover_size);
 
                 if (index < ThreadState::NUM_FREE_LISTS)
                 {
@@ -283,8 +291,8 @@ namespace mstl
                     }
                 }
 
-                // Last resort - try allocating exactly what's needed
-                start_free = static_cast<char *>(::operator new(size, std::nothrow));
+                // Last resort - try allocating exactly what's needed, use malloc
+                start_free = static_cast<char *>(malloc_alloc::allocate(size));
 
                 if (!start_free)
                 {
@@ -315,7 +323,6 @@ namespace mstl
     template <size_t _Max_size>
     void *PthreadAllocPerThreadState<_Max_size>::refill(size_t n)
     {
-
         // How many objects to allocate at once
         constexpr size_t NOBJS = 20;
 
@@ -323,7 +330,7 @@ namespace mstl
         size_t total_bytes = n * NOBJS;
         size_t adjustment = 0; // Will be used if alignment adjustment is needed
 
-        char *chunk = PthreadAllocator<_Max_size>::chunk_allocate(total_bytes, adjustment);
+        char *chunk = PthreadAllocatorTemplate<_Max_size>::chunk_allocate(total_bytes, adjustment);
 
         if (!chunk)
         {
@@ -347,7 +354,7 @@ namespace mstl
         }
 
         // Add remaining objects to the free list
-        size_t index = (n - 1) / DEFAULT_ALIGNMENT;
+        size_t index = detail::size_to_index(n);
         MemoryBlock *current_block = nullptr;
         MemoryBlock *next_block = nullptr;
 
@@ -385,25 +392,29 @@ namespace mstl
 
     // Initialize static members
     template <size_t _Max_size>
-    std::mutex PthreadAllocator<_Max_size>::chunk_mutex;
+    std::mutex PthreadAllocatorTemplate<_Max_size>::chunk_mutex;
 
     template <size_t _Max_size>
-    char *PthreadAllocator<_Max_size>::start_free = nullptr;
+    char *PthreadAllocatorTemplate<_Max_size>::start_free = nullptr;
 
     template <size_t _Max_size>
-    char *PthreadAllocator<_Max_size>::end_free = nullptr;
+    char *PthreadAllocatorTemplate<_Max_size>::end_free = nullptr;
 
     template <size_t _Max_size>
-    size_t PthreadAllocator<_Max_size>::heap_size = 0;
+    size_t PthreadAllocatorTemplate<_Max_size>::heap_size = 0;
 
     template <size_t _Max_size>
-    typename PthreadAllocator<_Max_size>::ThreadState *PthreadAllocator<_Max_size>::free_thread_states = nullptr;
+    typename PthreadAllocatorTemplate<_Max_size>::ThreadState *PthreadAllocatorTemplate<_Max_size>::free_thread_states = nullptr;
 
     template <size_t _Max_size>
-    pthread_key_t PthreadAllocator<_Max_size>::thread_key;
+    pthread_key_t PthreadAllocatorTemplate<_Max_size>::thread_key;
 
     template <size_t _Max_size>
-    std::once_flag PthreadAllocator<_Max_size>::key_init_flag;
+    std::once_flag PthreadAllocatorTemplate<_Max_size>::key_init_flag;
+
+    template <size_t _Max_size>
+    inline constexpr bool check_pthread_alloc = SimpleAllocator<PthreadAllocatorTemplate<_Max_size>, int>;
+    static_assert(check_pthread_alloc<MAX_BYTES>, "PthreadAllocatorTemplate must satisfy SimpleAllocator concept");
 
     // STL-compatible allocator adapter
     template <typename T, size_t _Max_size = MAX_BYTES>
@@ -431,20 +442,39 @@ namespace mstl
 
         pointer allocate(size_type n)
         {
-            return static_cast<pointer>(PthreadAllocator<_Max_size>::allocate(n * sizeof(T)));
+            return static_cast<pointer>(PthreadAllocatorTemplate<_Max_size>::allocate(n * sizeof(T)));
         }
 
         void deallocate(pointer p, size_type n)
         {
-            PthreadAllocator<_Max_size>::deallocate(p, n * sizeof(T));
+            PthreadAllocatorTemplate<_Max_size>::deallocate(p, n * sizeof(T));
         }
 
-        // Construct and destroy methods are default in modern C++
+        pointer address(reference x) const noexcept { return std::addressof(x); }
+
+        const_pointer address(const_reference x) const noexcept { return std::addressof(x); }
+
+        size_type max_size() const noexcept
+        {
+            return size_type(-1) / sizeof(T);
+        }
+
+        template <typename U, typename... Args>
+        void construct(U* p, Args&&... args) { 
+            ::new((void*)p) U(std::forward<Args>(args)...); 
+        }
+        
+        template <typename U>
+        void destroy(U* p) { p->~U(); }
 
         // Equality operations
         bool operator==(const StlPthreadAllocator &) const noexcept { return true; }
         bool operator!=(const StlPthreadAllocator &) const noexcept { return false; }
     };
+
+    template <typename T, size_t _Max_size>
+    inline constexpr bool check_stl_pthread_allocator = StandardAllocator<StlPthreadAllocator<T, _Max_size>>;
+    static_assert(check_stl_pthread_allocator<int, MAX_BYTES>, "StlPthreadAllocator must satisfy StandardAllocator concept");
 }
 
 #endif

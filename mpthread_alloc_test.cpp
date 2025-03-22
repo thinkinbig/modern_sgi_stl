@@ -50,24 +50,24 @@ public:
 
 // 封装分配和释放函数，以跟踪内存使用
 void* tracked_allocate(size_t size) {
-    void* ptr = mstl::PthreadAllocator<>::allocate(size);
+    void* ptr = mstl::PthreadAllocatorTemplate<>::allocate(size);
     LeakTracker::instance().record_allocation(ptr, size);
     return ptr;
 }
 
 void tracked_deallocate(void* ptr, size_t size) {
     LeakTracker::instance().record_deallocation(ptr);
-    mstl::PthreadAllocator<>::deallocate(ptr, size);
+    mstl::PthreadAllocatorTemplate<>::deallocate(ptr, size);
 }
 
 void test_basic_allocation() {
     std::cout << "Testing basic allocation..." << std::endl;
     
-    void* p = mstl::PthreadAllocator<>::allocate(64);
+    void* p = mstl::PthreadAllocatorTemplate<>::allocate(64);
     
     assert(p != nullptr);
     
-    mstl::PthreadAllocator<>::deallocate(p, 64);
+    mstl::PthreadAllocatorTemplate<>::deallocate(p, 64);
     
     
     std::cout << "Basic allocation test passed!" << std::endl;
@@ -95,11 +95,11 @@ void test_smart_pointer() {
     
     // 智能指针测试
     auto deleter = [](int* p) {
-        mstl::PthreadAllocator<>::deallocate(p, sizeof(int));
+        mstl::PthreadAllocatorTemplate<>::deallocate(p, sizeof(int));
     };
     
     std::unique_ptr<int, decltype(deleter)> ptr(
-        static_cast<int*>(mstl::PthreadAllocator<>::allocate(sizeof(int))),
+        static_cast<int*>(mstl::PthreadAllocatorTemplate<>::allocate(sizeof(int))),
         deleter
     );
     
@@ -115,11 +115,11 @@ double run_multi_thread_test(int num_threads, int allocs_per_thread, bool use_cu
         std::vector<void*> ptrs;
         ptrs.reserve(allocs_per_thread);
         for (int i = 0; i < allocs_per_thread; ++i) {
-            void* p = mstl::PthreadAllocator<>::allocate(64);
+            void* p = mstl::PthreadAllocatorTemplate<>::allocate(64);
             ptrs.push_back(p);
         }
         for (void* p : ptrs) {
-            mstl::PthreadAllocator<>::deallocate(p, 64);
+            mstl::PthreadAllocatorTemplate<>::deallocate(p, 64);
         }
     };
     
