@@ -86,10 +86,10 @@ namespace mstl {
         // 添加noexcept移动语义版本
         void push_back(T&& x) noexcept(std::is_nothrow_move_constructible<T>::value) {
             if (finish != end_of_storage) {
-                construct(finish, std::forward<T>(x));
+                construct(finish, std::move(x));
                 ++finish;
             } else {
-                insert_aux(end(), std::forward<T>(x));
+                insert_aux(end(), std::move(x));
             }
         }
 
