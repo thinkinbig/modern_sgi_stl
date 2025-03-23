@@ -38,6 +38,7 @@ add_executable(mstl_construct_test mstl_construct_test.cpp)
 add_executable(mstl_uninitialized_test mstl_uninitialized_test.cpp)
 add_executable(mpthread_alloc_test mpthread_alloc_test.cpp)
 add_executable(mstl_iterator_test mstl_iterator_test.cpp)
+add_executable(mstl_vector_test mstl_vector_test.cpp)
 
 # 链接pthread库
 find_package(Threads REQUIRED)
@@ -50,6 +51,7 @@ add_test(NAME mstl_construct_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl
 add_test(NAME mstl_uninitialized_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_uninitialized_test)
 add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpthread_alloc_test)
 add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_iterator_test)
+add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_vector_test)
 
 # 打印调试信息
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")

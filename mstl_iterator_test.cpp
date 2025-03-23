@@ -66,7 +66,7 @@ int main() {
     std::cout << "6. 类型辅助函数测试:" << std::endl;
     
     std::cout << "  迭代器类别测试: ";
-    if (std::is_same_v<decltype(mstl::iterator_category(vec.begin())), 
+    if (std::is_same_v<decltype(mstl::detail::iterator_category(vec.begin())), 
                        mstl::random_access_iterator_tag>) {
         std::cout << "正确" << std::endl;
     } else {
@@ -74,7 +74,7 @@ int main() {
     }
     
     std::cout << "  距离类型测试: ";
-    if (std::is_same_v<std::remove_pointer_t<decltype(mstl::distance_type(vec.begin()))>, 
+    if (std::is_same_v<std::remove_pointer_t<decltype(mstl::detail::distance_type(vec.begin()))>, 
                        typename std::vector<int>::iterator::difference_type>) {
         std::cout << "正确" << std::endl;
     } else {
@@ -82,7 +82,7 @@ int main() {
     }
     
     std::cout << "  值类型测试: ";
-    if (std::is_same_v<std::remove_pointer_t<decltype(mstl::value_type(vec.begin()))>, 
+    if (std::is_same_v<std::remove_pointer_t<decltype(mstl::detail::value_type(vec.begin()))>, 
                        typename std::vector<int>::iterator::value_type>) {
         std::cout << "正确" << std::endl;
     } else {

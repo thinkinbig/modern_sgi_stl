@@ -125,6 +125,8 @@ namespace mstl
     // 定义分配器类型
     using malloc_alloc = __malloc_alloc_template<0>;
 
+    using alloc = malloc_alloc;
+
     template <bool threads, int inst>
     class __default_alloc_template
     {
