@@ -278,6 +278,124 @@ namespace mstl
     inline constexpr bool check_simple_alloc = SimpleAllocator<simple_alloc<Tp, Alloc>, Tp>;
     static_assert(check_simple_alloc<int, default_alloc>, "simple_alloc must satisfy SimpleAllocator concept");
 
+    // allocator_traits 实现
+    template <typename Alloc>
+    struct allocator_traits
+    {
+        using allocator_type = Alloc;
+        using value_type = typename Alloc::value_type;
+        using pointer = typename Alloc::pointer;
+        using const_pointer = typename Alloc::const_pointer;
+        using void_pointer = std::conditional_t<std::is_same_v<pointer, value_type*>,
+                                              void*,
+                                              typename std::pointer_traits<pointer>::rebind<void>>;
+        using const_void_pointer = std::conditional_t<std::is_same_v<const_pointer, const value_type*>,
+                                                    const void*,
+                                                    typename std::pointer_traits<const_pointer>::rebind<const void>>;
+        using difference_type = typename Alloc::difference_type;
+        using size_type = typename Alloc::size_type;
+        using propagate_on_container_copy_assignment = std::false_type;
+        using propagate_on_container_move_assignment = std::false_type;
+        using propagate_on_container_swap = std::false_type;
+
+        template <typename T>
+        using rebind_alloc = typename Alloc::template rebind<T>::other;
+
+        static pointer allocate(Alloc& a, size_type n)
+        {
+            return a.allocate(n);
+        }
+
+        static pointer allocate(Alloc& a, size_type n, const_void_pointer hint)
+        {
+            return a.allocate(n, hint);
+        }
+
+        static void deallocate(Alloc& a, pointer p, size_type n)
+        {
+            a.deallocate(p, n);
+        }
+
+        template <typename T, typename... Args>
+        static void construct(Alloc&, T* p, Args&&... args)
+        {
+            mstl::construct(p, std::forward<Args>(args)...);
+        }
+
+        template <typename T>
+        static void destroy(Alloc&, T* p)
+        {
+            mstl::destroy(p);
+        }
+
+        static size_type max_size(const Alloc& a) noexcept
+        {
+            return a.max_size();
+        }
+
+        static Alloc select_on_container_copy_construction(const Alloc& rhs)
+        {
+            return rhs;
+        }
+    };
+
+    // allocator_traits 特化版本
+    template <typename T>
+    struct allocator_traits<allocator<T>>
+    {
+        using allocator_type = allocator<T>;
+        using value_type = T;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using void_pointer = void*;
+        using const_void_pointer = const void*;
+        using difference_type = std::ptrdiff_t;
+        using size_type = std::size_t;
+        using propagate_on_container_copy_assignment = std::false_type;
+        using propagate_on_container_move_assignment = std::false_type;
+        using propagate_on_container_swap = std::false_type;
+
+        template <typename U>
+        using rebind_alloc = allocator<U>;
+
+        static pointer allocate(allocator_type& a, size_type n)
+        {
+            return a.allocate(n);
+        }
+
+        static pointer allocate(allocator_type& a, size_type n, const_void_pointer)
+        {
+            return a.allocate(n);
+        }
+
+        static void deallocate(allocator_type& a, pointer p, size_type n)
+        {
+            a.deallocate(p, n);
+        }
+
+        template <typename U, typename... Args>
+        static void construct(allocator_type&, U* p, Args&&... args)
+        {
+            mstl::construct(p, std::forward<Args>(args)...);
+        }
+
+        template <typename U>
+        static void destroy(allocator_type&, U* p)
+        {
+            mstl::destroy(p);
+        }
+
+        static size_type max_size(const allocator_type&) noexcept
+        {
+            return size_t(-1) / sizeof(T);
+        }
+
+        static allocator_type select_on_container_copy_construction(const allocator_type& rhs)
+        {
+            return rhs;
+        }
+    };
+
     // 标准分配器接口
     template <typename Tp, typename Alloc = default_alloc> // 默认使用单线程版本
     class allocator
