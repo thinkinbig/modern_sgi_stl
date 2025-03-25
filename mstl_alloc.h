@@ -265,6 +265,12 @@ namespace mstl
         {
             Alloc::deallocate(p, sizeof(Tp));
         }
+
+        template <class Tp1>
+        struct rebind
+        {
+            using other = simple_alloc<Tp1, Alloc>;
+        };
     };
 
     // 静态断言，确保simple_alloc满足SimpleAllocator合约

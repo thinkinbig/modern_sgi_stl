@@ -184,12 +184,13 @@ namespace mstl
         iterator insert(iterator position, U&& x) {
             Node* tmp = get_node();
             tmp->data = std::forward<U>(x);
-            
-            tmp->next = position.node;
-            tmp->prev = position.node->prev;
-            
-            position.node->prev->next = tmp;
-            position.node->prev = tmp;
+
+            Node* node = position.node;
+
+            tmp->next = node;
+            node->prev->next = tmp;
+            tmp->prev = node->prev;
+            node->prev = tmp;
             
             return iterator(tmp);
         }
@@ -211,13 +212,15 @@ namespace mstl
         }
         
         iterator erase(iterator position) {
-            Node* next_node = position.node->next;
-            Node* prev_node = position.node->prev;
-            
-            prev_node->next = next_node;
+            Node* node = position.node;
+            Node* next_node = node->next;
+            Node* prev_node = node->prev;
+
             next_node->prev = prev_node;
-            
-            put_node(position.node);
+            prev_node->next = next_node;
+
+            put_node(node);
+
             return iterator(next_node);
         }
 
@@ -282,6 +285,7 @@ namespace mstl
 
     protected:
         Node* node;
+        using node_allocator = typename simple_alloc<T, alloc>::template rebind<Node>::other;
     
         void create_node() {
             node = new Node;
@@ -306,8 +310,8 @@ namespace mstl
             }
         }
 
-        void put_node(Node* p) { delete p; }
-        Node* get_node() { return new Node; }
+        void put_node(Node* p) { node_allocator::deallocate(p); }
+        Node* get_node() { return node_allocator::allocate(sizeof(Node));  }
     };
 }
 #endif
