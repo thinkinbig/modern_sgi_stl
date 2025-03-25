@@ -4,7 +4,7 @@
 // 测试vector的基本功能
 int main() {
     // 测试构造函数和基本操作
-    mstl::vector<int> vec;
+    mstl::Vector<int> vec;
     std::cout << "初始vector是否为空: " << (vec.empty() ? "是" : "否") << std::endl;
     std::cout << "初始vector大小: " << vec.size() << std::endl;
     std::cout << "初始vector容量: " << vec.capacity() << std::endl;

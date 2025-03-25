@@ -10,57 +10,57 @@
 namespace mstl
 {
     template <typename T>
-    struct list_node
+    struct ListNode
     {
-        list_node* next;
-        list_node* prev;
+        ListNode* next;
+        ListNode* prev;
         T data;
         
-        list_node() : next(nullptr), prev(nullptr) {}
-        list_node(const T& x) : next(nullptr), prev(nullptr), data(x) {}
+        ListNode() : next(nullptr), prev(nullptr) {}
+        ListNode(const T& x) : next(nullptr), prev(nullptr), data(x) {}
     };
     
     template<typename T, typename Ref, typename Ptr>
-    struct list_iterator {
+    struct ListIterator {
         using iterator_category = bidirectional_iterator_tag;
         using value_type = T;
         using pointer = Ptr;
         using reference = Ref;
         using size_type = size_t;
         using difference_type = ptrdiff_t;
-        using Node = list_node<T>;
+        using Node = ListNode<T>;
 
-        using iterator = list_iterator<T, T&, T*>;
-        using const_iterator = list_iterator<T, const T&, const T*>;
-        using self = list_iterator<T, Ref, Ptr>;
+        using iterator = ListIterator<T, T&, T*>;
+        using const_iterator = ListIterator<T, const T&, const T*>;
+        using self = ListIterator<T, Ref, Ptr>;
 
-        Node* node;
+        Node* kNode;
 
-        list_iterator(Node* x) : node(x) {}
-        list_iterator() : node(nullptr) {}
+        ListIterator(Node* x) : kNode(x) {}
+        ListIterator() : kNode(nullptr) {}
         
         // 允许从非const转换到const
-        list_iterator(const self& x) : node(x.node) {}
+        ListIterator(const self& x) : kNode(x.kNode) {}
 
         self& operator=(const self& x) {
-            node = x.node;
+            kNode = x.kNode;
             return *this;
         }
 
         self& operator=(self&& x) {
-            node = x.node;
-            x.node = nullptr;
+            kNode = x.kNode;
+            x.kNode = nullptr;
             return *this;
         }
 
-        ~list_iterator() {
-            node = nullptr;
+        ~ListIterator() {
+            kNode = nullptr;
         }
 
-        void incr() { node = node->next; }
-        void decr() { node = node->prev; }
+        void incr() { kNode = kNode->next; }
+        void decr() { kNode = kNode->prev; }
 
-        reference operator*() const { return node->data; }
+        reference operator*() const { return kNode->data; }
         pointer operator->() const { return &(operator*()); }
 
         self& operator++() {
@@ -86,16 +86,16 @@ namespace mstl
         }
 
         bool operator==(const self& x) const {
-            return node == x.node;
+            return kNode == x.kNode;
         }
 
         bool operator!=(const self& x) const {
-            return node != x.node;
+            return kNode != x.kNode;
         }
     };
 
     template<typename T, class Alloc = alloc> 
-    class list {
+    class List {
     public:
         using value_type = T;
         using pointer = T*;
@@ -104,28 +104,28 @@ namespace mstl
         using const_reference = const T&;
         using size_type = size_t;
         using difference_type = ptrdiff_t;
-        using Node = list_node<T>;
+        using Node = ListNode<T>;
 
-        using iterator = list_iterator<T, T&, T*>;
-        using const_iterator = list_iterator<T, const T&, const T*>;
+        using iterator = ListIterator<T, T&, T*>;
+        using const_iterator = ListIterator<T, const T&, const T*>;
 
         // 构造函数
-        list() { create_node(); }
-        list(size_type n, const T& value = T()) {
-            create_node();
+        List() { createNode(); }
+        List(size_type n, const T& value = T()) {
+            createNode();
             insert(begin(), n, value);
         }
-        list(const list& x) {
-            create_node();
+        List(const List& x) {
+            createNode();
             insert(begin(), x.begin(), x.end());
         }
 
-        list(list&& x) {
-            node = x.node;
-            x.node = nullptr;
+        List(List&& x) {
+            kNode = x.kNode;
+            x.kNode = nullptr;
         }
 
-        list& operator=(const list& x) {
+        List& operator=(const List& x) {
             if (this != &x) {
                 clear();
                 insert(begin(), x.begin(), x.end());
@@ -133,28 +133,28 @@ namespace mstl
             return *this;
         }
 
-        list& operator=(list&& x) {
+        List& operator=(List&& x) {
             if (this != &x) {
                 clear();
-                node = x.node;
-                x.node = nullptr;
+                kNode = x.kNode;
+                x.kNode = nullptr;
             }
             return *this;
         }
 
-        ~list() {
+        ~List() {
             clear();
-            delete node;
+            delete kNode;
         }
 
         // 迭代器相关
-        iterator begin() { return node->next; }
-        const_iterator begin() const { return node->next; }
-        iterator end() { return node; }
-        const_iterator end() const { return node; }
+        iterator begin() { return kNode->next; }
+        const_iterator begin() const { return kNode->next; }
+        iterator end() { return kNode; }
+        const_iterator end() const { return kNode; }
         
         // 容量相关
-        bool empty() const { return node->next == node; }
+        bool empty() const { return kNode->next == kNode; }
         size_type size() const {
             return distance(begin(), end());
         }
@@ -182,10 +182,10 @@ namespace mstl
 
         template<typename U>
         iterator insert(iterator position, U&& x) {
-            Node* tmp = get_node();
+            Node* tmp = getNode();
             tmp->data = std::forward<U>(x);
 
-            Node* node = position.node;
+            Node* node = position.kNode;
 
             tmp->next = node;
             node->prev->next = tmp;
@@ -212,16 +212,16 @@ namespace mstl
         }
         
         iterator erase(iterator position) {
-            Node* node = position.node;
-            Node* next_node = node->next;
-            Node* prev_node = node->prev;
+            Node* node = position.kNode;
+            Node* nextNode = node->next;
+            Node* prevNode = node->prev;
 
-            next_node->prev = prev_node;
-            prev_node->next = next_node;
+            nextNode->prev = prevNode;
+            prevNode->next = nextNode;
 
-            put_node(node);
+            putNode(node);
 
-            return iterator(next_node);
+            return iterator(nextNode);
         }
 
         iterator erase(iterator first, iterator last) {
@@ -235,37 +235,37 @@ namespace mstl
             erase(begin(), end());
         }
         
-        void splice(iterator position, list& x) {
+        void splice(iterator position, List& x) {
             if (!x.empty()) {
                 transfer(position, x.begin(), x.end());
             }
         }
 
-        void splice(iterator position, list&& x) {
+        void splice(iterator position, List&& x) {
             if (!x.empty()) {
                 transfer(position, x.begin(), x.end());
             }
         }
 
-        void splice(iterator position, list& x, iterator i) {
+        void splice(iterator position, List& x, iterator i) {
             if (position != i) {
-                transfer(position, i, i.node->next);
+                transfer(position, i, i.kNode->next);
             }
         }
 
-        void splice(iterator position, list&& x, iterator i) {
+        void splice(iterator position, List&& x, iterator i) {
             if (position != i) {
-                transfer(position, i, i.node->next);
+                transfer(position, i, i.kNode->next);
             }
         }
 
-        void splice(iterator position, list& x, iterator first, iterator last) {
+        void splice(iterator position, List& x, iterator first, iterator last) {
             if (first != last) {
                 transfer(position, first, last);
             }
         }
 
-        void splice(iterator position, list&& x, iterator first, iterator last) {
+        void splice(iterator position, List&& x, iterator first, iterator last) {
             if (first != last) {
                 transfer(position, first, last);
             }
@@ -284,34 +284,34 @@ namespace mstl
         }
 
     protected:
-        Node* node;
-        using node_allocator = typename allocator_traits<simple_alloc<T, alloc>>::rebind_alloc<Node>;
+        Node* kNode;
+        using node_allocator = typename allocator_traits<SimpleAlloc<T, alloc>>::rebind_alloc<Node>;
     
-        void create_node() {
-            node = get_node();
-            node->next = node;
-            node->prev = node;
+        void createNode() {
+            kNode = getNode();
+            kNode->next = kNode;
+            kNode->prev = kNode;
         }
 
         // 辅助函数
         void transfer(iterator position, iterator first, iterator last) {
             if (position != first && position != last) {
-                Node* first_node = first.node;
-                Node* last_node = last.node->prev;
+                Node* firstNode = first.kNode;
+                Node* lastNode = last.kNode->prev;
                 
-                first_node->prev->next = last.node;
-                last.node->prev = first_node->prev;
+                firstNode->prev->next = last.kNode;
+                last.kNode->prev = firstNode->prev;
                 
-                first_node->prev = position.node->prev;
-                last_node->next = position.node;
+                firstNode->prev = position.kNode->prev;
+                lastNode->next = position.kNode;
                 
-                position.node->prev->next = first_node;
-                position.node->prev = last_node;
+                position.kNode->prev->next = firstNode;
+                position.kNode->prev = lastNode;
             }
         }
 
-        void put_node(Node* p) { node_allocator::deallocate(p); }
-        Node* get_node() { return node_allocator::allocate(sizeof(Node));  }
+        void putNode(Node* p) { node_allocator::deallocate(p); }
+        Node* getNode() { return node_allocator::allocate(sizeof(Node));  }
     };
 }
 #endif

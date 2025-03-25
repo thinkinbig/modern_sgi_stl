@@ -5,7 +5,7 @@
 
 // 用于测试的辅助函数
 template<typename T>
-void print_list(const mstl::list<T>& lst, const std::string& msg) {
+void printList(const mstl::List<T>& lst, const std::string& msg) {
     std::cout << msg << ": ";
     for (auto it = lst.begin(); it != lst.end(); ++it) {
         std::cout << *it << " ";
@@ -13,36 +13,36 @@ void print_list(const mstl::list<T>& lst, const std::string& msg) {
     std::cout << std::endl;
 }
 
-void test_list_constructor() {
+void testListConstructor() {
     std::cout << "\n=== 测试构造函数 ===" << std::endl;
     
     // 测试默认构造函数
-    mstl::list<int> lst1;
+    mstl::List<int> lst1;
     assert(lst1.empty());
     assert(lst1.size() == 0);
     
     // 测试带初始大小的构造函数
-    mstl::list<int> lst2(5);
+    mstl::List<int> lst2(5);
     assert(lst2.size() == 5);
     
     // 测试带初始大小和值的构造函数
-    mstl::list<int> lst3(3, 100);
+    mstl::List<int> lst3(3, 100);
     assert(lst3.size() == 3);
     for (auto it = lst3.begin(); it != lst3.end(); ++it) {
         assert(*it == 100);
     }
     
     // 测试拷贝构造函数
-    mstl::list<int> lst4(lst3);
+    mstl::List<int> lst4(lst3);
     assert(lst4.size() == lst3.size());
     
     std::cout << "Constructor tests passed!" << std::endl;
 }
 
-void test_list_push_back() {
+void testListPushBack() {
     std::cout << "\n=== 测试push_back ===" << std::endl;
     
-    mstl::list<int> lst;
+    mstl::List<int> lst;
     
     // 测试空列表的push_back
     lst.push_back(1);
@@ -66,10 +66,10 @@ void test_list_push_back() {
     std::cout << "Push back tests passed!" << std::endl;
 }
 
-void test_list_push_front() {
+void testListPushFront() {
     std::cout << "\n=== 测试push_front ===" << std::endl;
     
-    mstl::list<int> lst;
+    mstl::List<int> lst;
     
     // 测试空列表的push_front
     lst.push_front(1);
@@ -93,10 +93,10 @@ void test_list_push_front() {
     std::cout << "Push front tests passed!" << std::endl;
 }
 
-void test_list_iterator() {
+void testListIterator() {
     std::cout << "\n=== 测试迭代器 ===" << std::endl;
     
-    mstl::list<int> lst;
+    mstl::List<int> lst;
     for (int i = 0; i < 5; ++i) {
         lst.push_back(i);
     }
@@ -136,10 +136,10 @@ void test_list_iterator() {
     std::cout << "Iterator tests passed!" << std::endl;
 }
 
-void test_list_operations() {
+void testListOperations() {
     std::cout << "\n=== 测试其他操作 ===" << std::endl;
     
-    mstl::list<int> lst;
+    mstl::List<int> lst;
     
     // 测试insert
     auto it = lst.begin();
@@ -161,7 +161,7 @@ void test_list_operations() {
     assert(lst.size() == 0);
     
     // 测试赋值操作
-    mstl::list<int> lst2;
+    mstl::List<int> lst2;
     lst2.push_back(10);
     lst2.push_back(20);
     
@@ -169,12 +169,12 @@ void test_list_operations() {
     assert(lst.size() == lst2.size());
     
     // 测试splice
-    mstl::list<int> lst3;
+    mstl::List<int> lst3;
     lst3.push_back(30);
     lst3.push_back(40);
     
     lst.splice(lst.end(), lst3);
-    print_list(lst, "lst");
+    printList(lst, "lst");
     assert(lst.size() == 4);
     assert(lst3.empty());
     
@@ -185,11 +185,11 @@ int main() {
     std::cout << "Starting mstl::list tests..." << std::endl;
     
     try {
-        test_list_constructor();
-        test_list_push_back();
-        // test_list_push_front();
-        // test_list_iterator();
-        test_list_operations();
+        testListConstructor();
+        testListPushBack();
+        testListPushFront();
+        testListIterator();
+        testListOperations();
         
         std::cout << "\nAll tests completed successfully!" << std::endl;
     }

@@ -16,7 +16,7 @@ namespace mstl
     // malloc-based allocator 通常比 default alloc 速度慢
 
     template <int inst>
-    class __malloc_alloc_template
+    class MallocAllocTemplate
     {
     public:
         using MallocHandler = void (*)();
@@ -26,35 +26,35 @@ namespace mstl
         template <typename T>
         struct rebind
         {
-            using other = __malloc_alloc_template<inst>;
+            using other = MallocAllocTemplate<inst>;
         };
 
     private:
-        static MallocFunction oom_malloc;
-        static ReallocFunction oom_realloc;
-        static MallocHandler malloc_alloc_oom_handler;
+        static MallocFunction kOomMalloc;
+        static ReallocFunction kOomRealloc;
+        static MallocHandler kMallocAllocOomHandler;
 
-        static void *default_oom_malloc(size_t n)
+        static void *defaultOomMalloc(size_t n)
         {
             while (true)
             {
-                if (!malloc_alloc_oom_handler)
+                if (!kMallocAllocOomHandler)
                     throw std::bad_alloc();
 
-                malloc_alloc_oom_handler();
+                kMallocAllocOomHandler();
                 if (void *result = std::malloc(n))
                     return result;
             }
         }
 
-        static void *default_oom_realloc(void *p, size_t n)
+        static void *defaultOomRealloc(void *p, size_t n)
         {
             while (true)
             {
-                if (!malloc_alloc_oom_handler)
+                if (!kMallocAllocOomHandler)
                     throw std::bad_alloc();
 
-                malloc_alloc_oom_handler();
+                kMallocAllocOomHandler();
                 if (void *result = std::realloc(p, n))
                     return result;
             }
@@ -72,7 +72,7 @@ namespace mstl
             }
             catch (std::bad_alloc &)
             {
-                void *rescue = oom_malloc(n);
+                void *rescue = kOomMalloc(n);
                 if (rescue == nullptr)
                 {
                     throw;
@@ -86,133 +86,133 @@ namespace mstl
             std::free(p);
         }
 
-        static void *reallocate(void *p, [[maybe_unused]] size_t old_sz, size_t new_sz)
+        static void *reallocate(void *p, [[maybe_unused]] size_t oldSize, size_t newSize)
         {
             try
             {
-                void *result = std::realloc(p, new_sz);
+                void *result = std::realloc(p, newSize);
                 if (result == nullptr)
                     throw std::bad_alloc();
                 return result;
             }
             catch (std::bad_alloc &)
             {
-                void *rescue = oom_realloc(p, new_sz);
+                void *rescue = kOomRealloc(p, newSize);
                 if (rescue == nullptr)
                     throw;
                 return rescue;
             }
         }
 
-        static MallocHandler set_malloc_handler(MallocHandler f) noexcept
+        static MallocHandler setMallocHandler(MallocHandler f) noexcept
         {
-            auto old = malloc_alloc_oom_handler;
-            malloc_alloc_oom_handler = f;
+            auto old = kMallocAllocOomHandler;
+            kMallocAllocOomHandler = f;
             return old;
         }
     };
 
     // malloc_alloc out-of-memory handling
     template <int inst>
-    typename __malloc_alloc_template<inst>::MallocHandler
-        __malloc_alloc_template<inst>::malloc_alloc_oom_handler = nullptr;
+    typename MallocAllocTemplate<inst>::MallocHandler
+        MallocAllocTemplate<inst>::kMallocAllocOomHandler = nullptr;
 
     template <int inst>
-    typename __malloc_alloc_template<inst>::MallocFunction
-        __malloc_alloc_template<inst>::oom_malloc = &__malloc_alloc_template<inst>::default_oom_malloc;
+    typename MallocAllocTemplate<inst>::MallocFunction
+        MallocAllocTemplate<inst>::kOomMalloc = &MallocAllocTemplate<inst>::defaultOomMalloc;
 
     template <int inst>
-    typename __malloc_alloc_template<inst>::ReallocFunction
-        __malloc_alloc_template<inst>::oom_realloc = &__malloc_alloc_template<inst>::default_oom_realloc;
+    typename MallocAllocTemplate<inst>::ReallocFunction
+        MallocAllocTemplate<inst>::kOomRealloc = &MallocAllocTemplate<inst>::defaultOomRealloc;
 
-    constexpr size_t __ALIGN = 8;
-    constexpr size_t __MAX_BYTES = 128;
-    constexpr size_t __NFREELISTS = __MAX_BYTES / __ALIGN;
+    constexpr size_t kAlignment = 8;
+    constexpr size_t kMaxBytes = 128;
+    constexpr size_t kNumFreeLists = kMaxBytes / kAlignment;
 
     // 定义分配器类型
-    using malloc_alloc = __malloc_alloc_template<0>;
+    using malloc_alloc = MallocAllocTemplate<0>;
 
     using alloc = malloc_alloc;
 
     template <bool threads, int inst>
-    class __default_alloc_template
+    class DefaultAllocTemplate
     {
     public:
 
         template <typename T>
         struct rebind
         {
-            using other = __default_alloc_template<threads, inst>;
+            using other = DefaultAllocTemplate<threads, inst>;
         };
 
     private:
-        static size_t ROUND_UP(size_t bytes)
+        static size_t roundUp(size_t bytes)
         {
-            return (((bytes) + __ALIGN - 1) & ~(__ALIGN - 1));
+            return (((bytes) + kAlignment - 1) & ~(kAlignment - 1));
         }
 
-        struct obj
+        struct Obj
         {
             union
             {
-                obj *free_list_link;
-                char client_data[1]; // The client sees this;
+                Obj *freeListLink;
+                char clientData[1]; // The client sees this;
             };
         };
 
-        static std::array<obj *volatile, __NFREELISTS> free_list;
+        static std::array<Obj *volatile, kNumFreeLists> freeList;
 
-        static size_t FREELIST_INDEX(size_t bytes)
+        static size_t freeListIndex(size_t bytes)
         {
-            return (((bytes) + __ALIGN - 1) / __ALIGN - 1);
+            return (((bytes) + kAlignment - 1) / kAlignment - 1);
         }
 
-        static std::mutex mutex;
+        static std::mutex kMutex;
 
         // 返回一个大小为n的对象， 并可能加入大小为n的其他区块到free list
         static void *refill(size_t n);
 
         // 配置一大块空间，可容纳nobjs个大小为"size"的区块
         // 如果配置nobjs个区块有所不便, nobjs可能会降低
-        static char *chunk_alloc(size_t size, int &nobjs);
+        static char *chunkAlloc(size_t size, int &nobjs);
 
         // Chunk allocation state
-        static char *start_free; // 内存池开始位置。只在chunk_alloc()中变化
-        static char *end_free;   // 内存池结束位置。 只在chunk_alloc()中变化
-        static size_t heap_size;
+        static char *startFree; // 内存池开始位置。只在chunk_alloc()中变化
+        static char *endFree;   // 内存池结束位置。 只在chunk_alloc()中变化
+        static size_t heapSize;
 
     public:
         static void *allocate(size_t n)
         {
-            obj *volatile *my_free_list;
-            obj *result;
-            if (n > __MAX_BYTES)
+            Obj *volatile *myFreeList;
+            Obj *result;
+            if (n > kMaxBytes)
                 return malloc_alloc::allocate(n);
 
-            my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
+            myFreeList = std::begin(freeList) + freeListIndex(n);
 
             if constexpr (threads)
             {
-                std::lock_guard<std::mutex> lock(mutex);
+                std::lock_guard<std::mutex> lock(kMutex);
             }
 
-            result = *my_free_list;
+            result = *myFreeList;
             if (result == nullptr)
             {
-                void *r = refill(ROUND_UP(n));
+                void *r = refill(roundUp(n));
                 return r;
             }
-            *my_free_list = result->free_list_link;
+            *myFreeList = result->freeListLink;
 
             return result;
         }
 
         static void deallocate(void *p, size_t n)
         {
-            obj *q = static_cast<obj *>(p);
-            obj *volatile *my_free_list;
+            Obj *q = static_cast<Obj *>(p);
+            Obj *volatile *myFreeList;
 
-            if (n > __MAX_BYTES)
+            if (n > kMaxBytes)
             {
                 malloc_alloc::deallocate(p, n);
                 return;
@@ -220,46 +220,46 @@ namespace mstl
 
             if constexpr (threads)
             {
-                std::lock_guard<std::mutex> lock(mutex);
+                std::lock_guard<std::mutex> lock(kMutex);
             }
 
-            my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
-            q->free_list_link = *my_free_list;
-            *my_free_list = q;
+            myFreeList = std::begin(freeList) + freeListIndex(n);
+            q->freeListLink = *myFreeList;
+            *myFreeList = q;
         }
 
-        static void *reallocate(void *p, size_t old_sz, size_t new_sz)
+        static void *reallocate(void *p, size_t oldSize, size_t newSize)
         {
             void *result;
-            size_t copy_sz;
+            size_t copySize;
 
-            if (old_sz > __MAX_BYTES && new_sz > __MAX_BYTES)
+            if (oldSize > kMaxBytes && newSize > kMaxBytes)
             {
-                return malloc_alloc::reallocate(p, old_sz, new_sz);
+                return malloc_alloc::reallocate(p, oldSize, newSize);
             }
 
-            if (ROUND_UP(old_sz) == ROUND_UP(new_sz))
+            if (roundUp(oldSize) == roundUp(newSize))
                 return p;
 
-            result = allocate(new_sz);
-            copy_sz = new_sz > old_sz ? old_sz : new_sz;
-            std::memcpy(result, p, copy_sz);
-            deallocate(p, old_sz);
+            result = allocate(newSize);
+            copySize = newSize > oldSize ? oldSize : newSize;
+            std::memcpy(result, p, copySize);
+            deallocate(p, oldSize);
             return result;
         }
     };
 
     // 静态成员定义
     template <bool threads, int inst>
-    std::mutex __default_alloc_template<threads, inst>::mutex;
+    std::mutex DefaultAllocTemplate<threads, inst>::kMutex;
 
     // 定义分配器类型
-    using default_alloc = __default_alloc_template<false, 0>;    // 单线程版本
-    using thread_safe_alloc = __default_alloc_template<true, 0>; // 多线程版本
+    using default_alloc = DefaultAllocTemplate<false, 0>;    // 单线程版本
+    using thread_safe_alloc = DefaultAllocTemplate<true, 0>; // 多线程版本
 
     // 简单的分配器封装
     template <class Tp, class Alloc>
-    class simple_alloc
+    class SimpleAlloc
     {
     public:
         using value_type = Tp;
@@ -289,14 +289,14 @@ namespace mstl
         template <class Tp1>
         struct rebind
         {
-            using other = simple_alloc<Tp1, Alloc>;
+            using other = SimpleAlloc<Tp1, Alloc>;
         };
     };
 
     // 静态断言，确保simple_alloc满足SimpleAllocator合约
     template <class Tp, class Alloc>
-    inline constexpr bool check_simple_alloc = SimpleAllocator<simple_alloc<Tp, Alloc>, Tp>;
-    static_assert(check_simple_alloc<int, default_alloc>, "simple_alloc must satisfy SimpleAllocator concept");
+    inline constexpr bool checkSimpleAlloc = SimpleAllocator<SimpleAlloc<Tp, Alloc>, Tp>;
+    static_assert(checkSimpleAlloc<int, default_alloc>, "simple_alloc must satisfy SimpleAllocator concept");
 
     // allocator_traits 实现
     template <typename Alloc>
@@ -474,8 +474,8 @@ namespace mstl
 
     // 静态断言，确保allocator满足StandardAllocator合约
     template <typename Tp, typename Alloc>
-    inline constexpr bool check_standard_allocator = StandardAllocator<allocator<Tp, Alloc>>;
-    static_assert(check_standard_allocator<int, default_alloc>, "allocator must satisfy StandardAllocator concept");
+    inline constexpr bool checkStandardAllocator = StandardAllocator<allocator<Tp, Alloc>>;
+    static_assert(checkStandardAllocator<int, default_alloc>, "allocator must satisfy StandardAllocator concept");
 
     // void特化版本
     template <typename Alloc>
@@ -509,115 +509,115 @@ namespace mstl
     }
 
     template <bool threads, int inst>
-    char *__default_alloc_template<threads, inst>::start_free = nullptr;
+    char *DefaultAllocTemplate<threads, inst>::startFree = nullptr;
 
     template <bool threads, int inst>
-    char *__default_alloc_template<threads, inst>::end_free = nullptr;
+    char *DefaultAllocTemplate<threads, inst>::endFree = nullptr;
 
     template <bool threads, int inst>
-    size_t __default_alloc_template<threads, inst>::heap_size = 0;
+    size_t DefaultAllocTemplate<threads, inst>::heapSize = 0;
 
     template <bool threads, int inst>
-    std::array<typename __default_alloc_template<threads, inst>::obj *volatile, __NFREELISTS>
-        __default_alloc_template<threads, inst>::free_list = {0}; // 定义
+    std::array<typename DefaultAllocTemplate<threads, inst>::Obj *volatile, kNumFreeLists>
+        DefaultAllocTemplate<threads, inst>::freeList = {0}; // 定义
 
     template <bool threads, int inst>
-    void *__default_alloc_template<threads, inst>::refill(size_t n)
+    void *DefaultAllocTemplate<threads, inst>::refill(size_t n)
     {
         int nobjs = 20;
-        char *chunk = chunk_alloc(n, nobjs);
+        char *chunk = chunkAlloc(n, nobjs);
         if (chunk == nullptr)
         {
             return nullptr;
         }
 
-        obj *volatile *my_free_list;
-        obj *result;
-        obj *current_obj;
-        obj *next_obj;
+        Obj *volatile *myFreeList;
+        Obj *result;
+        Obj *currentObj;
+        Obj *nextObj;
         int i;
 
         if (nobjs == 1)
             return chunk;
 
-        my_free_list = std::begin(free_list) + FREELIST_INDEX(n);
-        result = static_cast<obj *>(static_cast<void *>(chunk));
-        *my_free_list = next_obj = static_cast<obj *>(static_cast<void *>(chunk + n));
+        myFreeList = std::begin(freeList) + freeListIndex(n);
+        result = static_cast<Obj *>(static_cast<void *>(chunk));
+        *myFreeList = nextObj = static_cast<Obj *>(static_cast<void *>(chunk + n));
 
         for (i = 1;; ++i)
         {
-            current_obj = next_obj;
-            next_obj = static_cast<obj *>(static_cast<void *>(reinterpret_cast<char *>(current_obj) + n));
+            currentObj = nextObj;
+            nextObj = static_cast<Obj *>(static_cast<void *>(reinterpret_cast<char *>(currentObj) + n));
             if (nobjs - 1 == i)
             {
-                current_obj->free_list_link = nullptr;
+                currentObj->freeListLink = nullptr;
                 break;
             }
             else
             {
-                current_obj->free_list_link = next_obj;
+                currentObj->freeListLink = nextObj;
             }
         }
         return result;
     }
 
     template <bool threads, int inst>
-    char *__default_alloc_template<threads, inst>::chunk_alloc(size_t size, int &nobjs)
+    char *DefaultAllocTemplate<threads, inst>::chunkAlloc(size_t size, int &nobjs)
     {
         char *result;
-        size_t total_bytes = size * nobjs;
-        size_t bytes_left = end_free - start_free;
+        size_t totalBytes = size * nobjs;
+        size_t bytesLeft = endFree - startFree;
 
-        if (bytes_left >= total_bytes)
+        if (bytesLeft >= totalBytes)
         {
-            result = start_free;
-            start_free += total_bytes;
+            result = startFree;
+            startFree += totalBytes;
             return result;
         }
-        else if (bytes_left >= size)
+        else if (bytesLeft >= size)
         {
-            nobjs = bytes_left / size;
-            total_bytes = size * nobjs;
-            result = start_free;
-            start_free += total_bytes;
+            nobjs = bytesLeft / size;
+            totalBytes = size * nobjs;
+            result = startFree;
+            startFree += totalBytes;
             return result;
         }
         else
         {
-            size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size >> 4);
+            size_t bytesToGet = 2 * totalBytes + roundUp(heapSize >> 4);
 
-            if (bytes_left > 0)
+            if (bytesLeft > 0)
             {
-                obj *volatile *my_free_list = std::begin(free_list) + FREELIST_INDEX(bytes_left);
-                obj *head = reinterpret_cast<obj *>(start_free);
-                head->free_list_link = *my_free_list;
-                *my_free_list = head;
+                Obj *volatile *myFreeList = std::begin(freeList) + freeListIndex(bytesLeft);
+                Obj *head = reinterpret_cast<Obj *>(startFree);
+                head->freeListLink = *myFreeList;
+                *myFreeList = head;
             }
 
-            start_free = static_cast<char *>(std::malloc(bytes_to_get));
-            if (start_free == nullptr)
+            startFree = static_cast<char *>(std::malloc(bytesToGet));
+            if (startFree == nullptr)
             {
                 size_t i;
-                obj *volatile *my_free_list, *p;
+                Obj *volatile *myFreeList, *p;
 
-                for (i = size; i <= __MAX_BYTES; i += __ALIGN)
+                for (i = size; i <= kMaxBytes; i += kAlignment)
                 {
-                    my_free_list = std::begin(free_list) + FREELIST_INDEX(i);
-                    p = *my_free_list;
+                    myFreeList = std::begin(freeList) + freeListIndex(i);
+                    p = *myFreeList;
                     if (nullptr != p)
                     {
-                        *my_free_list = p->free_list_link;
-                        start_free = reinterpret_cast<char *>(p);
-                        end_free = start_free + i;
-                        return chunk_alloc(size, nobjs);
+                        *myFreeList = p->freeListLink;
+                        startFree = reinterpret_cast<char *>(p);
+                        endFree = startFree + i;
+                        return chunkAlloc(size, nobjs);
                     }
                 }
-                end_free = nullptr;
-                start_free = static_cast<char *>(malloc_alloc::allocate(bytes_to_get));
+                endFree = nullptr;
+                startFree = static_cast<char *>(malloc_alloc::allocate(bytesToGet));
             }
-            heap_size += bytes_to_get;
-            end_free = start_free + bytes_to_get;
-            return chunk_alloc(size, nobjs);
+            heapSize += bytesToGet;
+            endFree = startFree + bytesToGet;
+            return chunkAlloc(size, nobjs);
         }
         return nullptr;
     }
