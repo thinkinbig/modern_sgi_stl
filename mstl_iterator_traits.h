@@ -1,36 +1,14 @@
-#ifndef __MSGI_STL_ITERATOR_CONCEPT_H
-#define __MSGI_STL_ITERATOR_CONCEPT_H
+#ifndef __MSTL_ITERATOR_TRAITS_H
+#define __MSTL_ITERATOR_TRAITS_H
 
-#include <iterator>
-#include <type_traits>
+#include <cstddef>
+#include "mstl_iterator_tags.h"
 
 namespace mstl
 {
-
-    // 迭代器类型标签 - 用于标识迭代器类别
-    struct input_iterator_tag
-    {
-    };
-    struct output_iterator_tag
-    {
-    };
-    struct forward_iterator_tag : public input_iterator_tag
-    {
-    };
-    struct bidirectional_iterator_tag : public forward_iterator_tag
-    {
-    };
-    struct random_access_iterator_tag : public bidirectional_iterator_tag
-    {
-    };
-    struct contiguous_iterator_tag : public random_access_iterator_tag
-    {
-    }; // C++20新增
-
-    // 迭代器特征萃取 - 基本模板
-    template <typename I>
-    struct iterator_traits
-    {
+    // 基本迭代器特征
+    template<typename I>
+    struct iterator_traits {
         using iterator_category = typename I::iterator_category;
         using value_type = typename I::value_type;
         using difference_type = typename I::difference_type;
@@ -39,25 +17,23 @@ namespace mstl
     };
 
     // 指针特化
-    template <typename T>
-    struct iterator_traits<T *>
-    {
+    template<typename T>
+    struct iterator_traits<T*> {
         using iterator_category = random_access_iterator_tag;
         using value_type = std::remove_cv_t<T>;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T *;
-        using reference = T &;
+        using difference_type = ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
     };
 
     // const指针特化
-    template <typename T>
-    struct iterator_traits<const T *>
-    {
+    template<typename T>
+    struct iterator_traits<const T*> {
         using iterator_category = random_access_iterator_tag;
         using value_type = std::remove_cv_t<T>;
-        using difference_type = std::ptrdiff_t;
-        using pointer = const T *;
-        using reference = const T &;
+        using difference_type = ptrdiff_t;
+        using pointer = const T*;
+        using reference = const T&;
     };
 
     // void类型特化
@@ -335,4 +311,4 @@ namespace mstl
 
 } // namespace mstl
 
-#endif // __MSGI_STL_ITERATOR_CONCEPT_H
+#endif // __MSTL_ITERATOR_TRAITS_H

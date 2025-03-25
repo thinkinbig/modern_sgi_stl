@@ -14,10 +14,12 @@ namespace mstl {
     class vector {
     public:
         using value_type = T;
-        using pointer = value_type*; // 指针式random access iterator 
+        using pointer = value_type*; // 指针式random access iterator
+        using const_pointer = const value_type*;
         using iterator = value_type*;
         using const_iterator = const value_type*;
         using reference = value_type&;
+        using const_reference = const value_type&;
         using size_type = size_t;
         using difference_type = ptrdiff_t;
 
@@ -71,7 +73,10 @@ namespace mstl {
         }
 
         reference front() { return *begin(); }
+        const_reference front() const { return *begin(); }
+
         reference back() { return *(end() - 1); }
+        const_reference back() const { return *(end() - 1); }
         
         // 修改容器 - 使用统一的push_back模板
         void push_back(const T& x) {
@@ -109,10 +114,9 @@ namespace mstl {
         
         // 添加区间删除版本
         iterator erase(iterator first, iterator last) {
-            std::copy(last, finish, first);
-            iterator new_finish = finish - (last - first);
-            destroy(new_finish, finish);
-            finish = new_finish;
+            iterator i = std::copy(last, finish, first);
+            destroy(i, finish);
+            finish -= (last - first);
             return first;
         }
         

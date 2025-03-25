@@ -4,6 +4,8 @@
 #include <concepts>
 #include <type_traits>
 #include <iterator>
+#include "mstl_iterator_tags.h"
+#include "mstl_iterator_traits.h"
 
 namespace mstl {
 
@@ -26,26 +28,48 @@ concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
 template <typename T>
 concept TriviallyDestructible = std::is_trivially_destructible_v<T>;
 
-// 这里需要修改
-// 暂时使用stl的迭代器概念
-// 后期需要修改为mstl的迭代器概念
-template <typename I>
-concept InputIterator = std::input_iterator<I>;
+// 基本迭代器概念
+template<typename I>
+concept Iterator = requires(I i) {
+    typename iterator_traits<I>::iterator_category;
+    typename iterator_traits<I>::value_type;
+    typename iterator_traits<I>::difference_type;
+    typename iterator_traits<I>::pointer;
+    typename iterator_traits<I>::reference;
+};
 
-template <typename I>
-concept OutputIterator = std::output_iterator<I, typename std::iterator_traits<I>::value_type>;
+// 输入迭代器概念
+template<typename I>
+concept InputIterator = Iterator<I> && requires(I i) {
+    { *i } -> std::same_as<typename iterator_traits<I>::reference>;
+    { ++i } -> std::same_as<I&>;
+    { i++ } -> std::same_as<I>;
+    { i != i } -> std::convertible_to<bool>;
+};
 
-template <typename I>
-concept ForwardIterator = std::forward_iterator<I>;
+// 输出迭代器概念
+template<typename I, typename T>
+concept OutputIterator = Iterator<I> && requires(I i, T t) {
+    { *i = t } -> std::same_as<typename iterator_traits<I>::reference>;
+    { ++i } -> std::same_as<I&>;
+    { i++ } -> std::same_as<I>;
+};
 
-template <typename I>
-concept BidirectionalIterator = std::bidirectional_iterator<I>;
+// 前向迭代器概念
+template<typename I>
+concept ForwardIterator = InputIterator<I> && std::is_base_of_v<forward_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
-template <typename I>
-concept RandomAccessIterator = std::random_access_iterator<I>;
+// 双向迭代器概念
+template<typename I>
+concept BidirectionalIterator = ForwardIterator<I> && std::is_base_of_v<bidirectional_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
-template <typename I>
-concept ContiguousIterator = std::contiguous_iterator<I>;
+// 随机访问迭代器概念
+template<typename I>
+concept RandomAccessIterator = BidirectionalIterator<I> && std::is_base_of_v<random_access_iterator_tag, typename iterator_traits<I>::iterator_category>;
+
+// 连续迭代器概念
+template<typename I>
+concept ContiguousIterator = RandomAccessIterator<I> && std::is_base_of_v<contiguous_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
 // 容器相关合约
 template <typename C>
