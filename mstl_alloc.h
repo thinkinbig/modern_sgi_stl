@@ -8,6 +8,7 @@
 #include <array>
 #include <mutex>
 #include "mstl_concepts.h"
+#include "mstl_construct.h"
 
 namespace mstl
 {
@@ -21,6 +22,12 @@ namespace mstl
         using MallocHandler = void (*)();
         using MallocFunction = void *(*)(size_t);
         using ReallocFunction = void *(*)(void *, size_t);
+
+        template <typename T>
+        struct rebind
+        {
+            using other = __malloc_alloc_template<inst>;
+        };
 
     private:
         static MallocFunction oom_malloc;
@@ -130,6 +137,13 @@ namespace mstl
     template <bool threads, int inst>
     class __default_alloc_template
     {
+    public:
+
+        template <typename T>
+        struct rebind
+        {
+            using other = __default_alloc_template<threads, inst>;
+        };
 
     private:
         static size_t ROUND_UP(size_t bytes)
@@ -248,6 +262,12 @@ namespace mstl
     class simple_alloc
     {
     public:
+        using value_type = Tp;
+        using pointer = Tp*;
+        using const_pointer = const Tp*;
+        using size_type = size_t;
+        using difference_type = ptrdiff_t;
+
         static Tp *allocate(size_t n)
         {
             return 0 == n ? 0 : static_cast<Tp *>(Alloc::allocate(n * sizeof(Tp)));
@@ -339,6 +359,62 @@ namespace mstl
         }
     };
 
+    // 标准分配器接口
+    template <typename Tp, typename Alloc = default_alloc> // 默认使用单线程版本
+    class allocator
+    {
+        using _Alloc = Alloc; // 使用用户指定的分配器
+    public:
+        using size_type = size_t;
+        using difference_type = ptrdiff_t;
+        using pointer = Tp *;
+        using const_pointer = const Tp *;
+        using reference = Tp &;
+        using const_reference = const Tp &;
+        using value_type = Tp;
+
+        template <class Tp1>
+        struct rebind
+        {
+            using other = allocator<Tp1, Alloc>; // 保持相同的分配器类型
+        };
+
+        allocator() noexcept {}
+        allocator(const allocator &) noexcept {}
+        template <class Tp1>
+        allocator(const allocator<Tp1, Alloc> &) noexcept {}
+        ~allocator() noexcept {}
+
+        pointer address(reference x) const { return &x; }
+        const_pointer address(const_reference x) const { return &x; }
+
+        // n 可以为0
+        pointer allocate(size_type n, const void * = nullptr)
+        {
+            return n != 0 ? static_cast<pointer>(_Alloc::allocate(n * sizeof(Tp))) : nullptr;
+        }
+
+        // p 不能为nullptr
+        void deallocate(pointer p, size_type n)
+        {
+            _Alloc::deallocate(p, n * sizeof(Tp));
+        }
+
+        size_type max_size() const noexcept
+        {
+            return size_t(-1) / sizeof(Tp);
+        }
+
+        void construct(pointer p, const Tp &val)
+        {
+            new (p) Tp(val);
+        }
+        void destroy(pointer p)
+        {
+            p->~Tp();
+        }
+    };
+
     // allocator_traits 特化版本
     template <typename T>
     struct allocator_traits<allocator<T>>
@@ -393,62 +469,6 @@ namespace mstl
         static allocator_type select_on_container_copy_construction(const allocator_type& rhs)
         {
             return rhs;
-        }
-    };
-
-    // 标准分配器接口
-    template <typename Tp, typename Alloc = default_alloc> // 默认使用单线程版本
-    class allocator
-    {
-        using _Alloc = Alloc; // 使用用户指定的分配器
-    public:
-        using size_type = size_t;
-        using difference_type = ptrdiff_t;
-        using pointer = Tp *;
-        using const_pointer = const Tp *;
-        using reference = Tp &;
-        using const_reference = const Tp &;
-        using value_type = Tp;
-
-        template <class Tp1>
-        struct rebind
-        {
-            using other = allocator<Tp1, Alloc>; // 保持相同的分配器类型
-        };
-
-        allocator() noexcept {}
-        allocator(const allocator &) noexcept {}
-        template <class Tp1>
-        allocator(const allocator<Tp1, Alloc> &) noexcept {}
-        ~allocator() noexcept {}
-
-        pointer address(reference x) const { return &x; }
-        const_pointer address(const_reference x) const { return &x; }
-
-        // n 可以为0
-        pointer allocate(size_type n, const void * = nullptr)
-        {
-            return n != 0 ? static_cast<pointer>(_Alloc::allocate(n * sizeof(Tp))) : nullptr;
-        }
-
-        // p 不能为nullptr
-        void deallocate(pointer p, size_type n)
-        {
-            _Alloc::deallocate(p, n * sizeof(Tp));
-        }
-
-        size_type max_size() const noexcept
-        {
-            return size_t(-1) / sizeof(Tp);
-        }
-
-        void construct(pointer p, const Tp &val)
-        {
-            new (p) Tp(val);
-        }
-        void destroy(pointer p)
-        {
-            p->~Tp();
         }
     };
 

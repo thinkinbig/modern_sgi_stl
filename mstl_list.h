@@ -285,10 +285,10 @@ namespace mstl
 
     protected:
         Node* node;
-        using node_allocator = typename simple_alloc<T, alloc>::template rebind<Node>::other;
+        using node_allocator = typename allocator_traits<simple_alloc<T, alloc>>::rebind_alloc<Node>;
     
         void create_node() {
-            node = new Node;
+            node = get_node();
             node->next = node;
             node->prev = node;
         }
