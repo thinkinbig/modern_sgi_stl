@@ -5,8 +5,12 @@ project(ModernSGI_STL VERSION 1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置调试选项
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra")
+
 # 添加Address Sanitizer支持
-option(USE_SANITIZER "Enable Address Sanitizer" OFF)
+option(USE_SANITIZER "Enable Address Sanitizer" ON)
 if(USE_SANITIZER)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
@@ -41,12 +45,33 @@ add_executable(mstl_iterator_test mstl_iterator_test.cpp)
 add_executable(mstl_vector_test mstl_vector_test.cpp)
 add_executable(mstl_list_test mstl_list_test.cpp)
 add_executable(mstl_deque_test mstl_deque_test.cpp)
+
+# 为所有测试添加调试信息
+set_target_properties(
+    mstl_alloc_test
+    mstl_construct_test
+    mstl_uninitialized_test
+    mpthread_alloc_test
+    mstl_iterator_test
+    mstl_vector_test
+    mstl_list_test
+    mstl_deque_test
+    PROPERTIES
+    COMPILE_FLAGS "-g -O0"
+)
+
 # 链接pthread库
 find_package(Threads REQUIRED)
 target_link_libraries(mpthread_alloc_test PRIVATE Threads::Threads)
 
 # 添加测试
 enable_testing()
+
+# 设置测试输出详细程度
+set(CTEST_OUTPUT_ON_FAILURE ON)
+set(CTEST_VERBOSE ON)
+
+# 添加测试
 add_test(NAME mstl_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_alloc_test)
 add_test(NAME mstl_construct_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_construct_test)
 add_test(NAME mstl_uninitialized_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_uninitialized_test)
@@ -56,10 +81,30 @@ add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_ve
 add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
 add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deque_test)
 
+# 设置测试属性
+set_tests_properties(
+    mstl_alloc_test
+    mstl_construct_test
+    mstl_uninitialized_test
+    mpthread_alloc_test
+    mstl_iterator_test
+    mstl_vector_test
+    mstl_list_test
+    mstl_deque_test
+    PROPERTIES
+    ENVIRONMENT "CTEST_FULL_OUTPUT=1"
+    TIMEOUT 10
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    LABELS "debug"
+)
+
 # 打印调试信息
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # 安装规则
 install(TARGETS mstl_alloc_test mstl_construct_test mstl_uninitialized_test

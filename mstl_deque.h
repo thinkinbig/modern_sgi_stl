@@ -44,12 +44,22 @@ namespace mstl
         DequeIterator() : cur(0), first(0), last(0), node(0) {}
         DequeIterator(const self &x) : cur(x.cur), first(x.first), last(x.last), node(x.node) {}
 
+        self& operator=(const self& x) {
+            if (this != &x) {
+                cur = x.cur;
+                first = x.first;
+                last = x.last;
+                node = x.node;
+            }
+            return *this;
+        }
+
         static size_t buffer_size() { return __deque_buf_size(sizeof(Tp)); }
 
         reference operator*() const { return *cur; }
         pointer operator->() const { return cur; }
 
-        difference_type operator-(const self &x)
+        difference_type operator-(const self &x) const
         {
             return buffer_size() * (node - x.node - 1) + (x.last - x.cur) + (cur - first);
         }
@@ -151,6 +161,7 @@ namespace mstl
         using value_type = Tp;
         using pointer = value_type *;
         using reference = value_type &;
+        using const_reference = const value_type &;
         using size_type = size_t;
         using difference_type = ptrdiff_t;
 
@@ -172,6 +183,12 @@ namespace mstl
 
     public:
         // 构造函数
+        Deque() : start(), finish(), map(nullptr), map_size(0) {
+            create_map_and_nodes(1);  // 分配一个空节点
+            start.cur = start.first;
+            finish.cur = finish.first;
+        }
+        
         Deque(size_type n, const value_type &value) : start(), finish(), map(nullptr), map_size(0) {
             fill_initialize(n, value);
         }
@@ -186,11 +203,12 @@ namespace mstl
         }
 
         reference front() { return *start; }
+        const_reference front() const { return *start; }
 
-        // TODO: 可能会有问题
-        reference back() { return finish--; }
+        reference back() { return *(finish - 1);}
+        const_reference back() const { return *(finish - 1);}
 
-        size_type size() { return finish - start; }
+        size_type size() const { return size_type(finish - start); }
 
         bool empty() const { return finish == start; }
 
@@ -214,15 +232,14 @@ namespace mstl
             size_type num_nodes = num_elements / buffer_size() + 1;
             map_size = std::max(initial_map_size(), num_nodes + 2);
             map = map_allocator::allocate(map_size);
+            map_pointer nstart = map + (map_size - num_nodes) / 2;
+            map_pointer nfinish = nstart + num_nodes;
+
             map_pointer cur;
             try {
-                for (cur = map; cur < map + map_size; ++cur) {
+                for (cur = nstart; cur < nfinish; ++cur) {
                     *cur = allocate_node();
                 }
-                start.set_node(map);
-                finish.set_node(map + num_nodes - 1);
-                start.cur = start.first;
-                finish.cur = finish.first + num_elements % buffer_size();
             }
             catch(...) {
                 // commit or rollback
@@ -230,6 +247,11 @@ namespace mstl
                 map_allocator::deallocate(map, map_size);
                 throw;
             }
+
+            start.set_node(nstart);
+            finish.set_node(nfinish - 1);
+            start.cur = start.first;
+            finish.cur = finish.first + num_elements % buffer_size();
         }
 
         size_type initial_map_size() const {
@@ -243,6 +265,161 @@ namespace mstl
         void deallocate_node(pointer p) {
             data_allocator::deallocate(p, buffer_size());
         }
+
+
+        void push_back(const value_type& x) {
+            __push_back(x);
+        }
+
+        void push_back(value_type&& x) {
+            __push_back(std::move(x));
+        }
+
+        template <typename U> 
+        void __push_back(U&& x) {
+            if (finish.cur != finish.last - 1) {
+                construct(finish.cur, std::forward<U>(x));
+                ++finish.cur;
+            } else {
+                __push_back_aux(std::forward<U>(x));
+            }
+        }
+
+        template <typename U>
+        void __push_back_aux(U&& x) {
+            reserve_map_at_back();
+            *(finish.node + 1) = allocate_node();
+            try {
+                construct(finish.cur, std::forward<U>(x));
+                finish.set_node(finish.node + 1);
+                finish.cur = finish.first;
+            } catch (...) {
+                deallocate_node(*(finish.node + 1));
+                throw;
+            }
+        }
+
+        void push_front(const value_type& x) {
+            __push_front(x);
+        }
+
+        void push_front(value_type&& x) {
+            __push_front(std::move(x));
+        }
+
+        template <typename U>
+        void __push_front(U&& x) {
+            if (start.cur != start.first) {
+                construct(start.cur - 1, std::forward<U>(x));
+                --start.cur;
+            } else {
+                __push_front_aux(std::forward<U>(x));
+            }
+        }
+
+        template <typename U>
+        void __push_front_aux(U&& x) {
+            reserve_map_at_front();
+            *(start.node - 1) = allocate_node();
+            try {
+                start.set_node(start.node - 1);
+                start.cur = start.last - 1;
+                construct(start.cur, std::forward<U>(x));
+            } catch (...) {
+                start.set_node(start.node + 1);
+                start.cur = start.first;
+                deallocate_node(*(start.node - 1));
+                throw;
+            }
+        }
+
+        void pop_back() {
+            if (finish.cur != finish.first) {
+                --finish.cur;
+                destroy(finish.cur);
+            } else {
+                __pop_back_aux();
+            }
+        }
+
+        void __pop_back_aux() {
+            deallocate_node(finish.first);
+            finish.set_node(finish.node - 1);
+            finish.cur = finish.last - 1;
+            destroy(finish.cur);
+        }
+
+        void pop_front() {
+            if (start.cur != start.last - 1) {
+                destroy(start.cur);
+                ++start.cur;
+            } else {
+                __pop_front_aux();
+            }
+        }
+
+        void __pop_front_aux() {
+            destroy(start.cur);
+            deallocate_node(start.first);
+            start.set_node(start.node + 1);
+            start.cur = start.first;
+        }
+
+        void clear() {
+            for (map_pointer node = start.node + 1; node < finish.node; ++node) {
+                destroy(*node, *node + buffer_size());
+                data_allocator::deallocate(*node, buffer_size());
+            }
+            
+            if (start.node != finish.node) {
+                destroy(start.cur, start.last);
+                destroy(finish.first, finish.cur);
+                data_allocator::deallocate(finish.first, buffer_size());
+            } else {
+                destroy(start.cur, finish.cur);
+            }
+            
+            finish = start;
+        }
+
+        void reserve_map_at_front(size_type nodes_to_add = 1) {
+            if (static_cast<size_type>(start.node - map) < nodes_to_add) {
+                reallocate_map(nodes_to_add, true);
+            }
+        }
+
+        void reserve_map_at_back(size_type nodes_to_add = 1) {
+            if (static_cast<size_type>(map_size - (finish.node - map)) < nodes_to_add + 1) {
+                reallocate_map(nodes_to_add, false);
+            }
+        }
+
+        void reallocate_map(size_type nodes_to_add, bool add_at_front) {
+            size_type old_num_nodes = finish.node - start.node + 1;
+            size_type new_num_nodes = old_num_nodes + nodes_to_add;
+
+            map_pointer new_start;
+            if (map_size > 2 * new_num_nodes) {
+                new_start = map + (map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+                if (new_start < start.node) {
+                    std::copy(start.node, finish.node + 1, new_start);
+                } else {
+                    std::copy_backward(start.node, finish.node + 1, new_start + old_num_nodes);
+                }
+            } else {
+                size_type new_map_size = map_size + std::max(map_size, nodes_to_add) + 2;
+                map_pointer new_map = map_allocator::allocate(new_map_size);
+                new_start = new_map + (new_map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+                std::copy(start.node, finish.node + 1, new_start);
+                map_allocator::deallocate(map, map_size);
+                map = new_map;
+                map_size = new_map_size;
+            }
+
+            start.set_node(new_start);
+            finish.set_node(new_start + old_num_nodes - 1);
+        }
+
     };
 } // namespace mstl
 

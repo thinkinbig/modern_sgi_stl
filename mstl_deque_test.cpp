@@ -23,6 +23,9 @@ void testDequeConstructor() {
     for (auto it = dq1.begin(); it != dq1.end(); ++it) {
         assert(*it == 1);
     }
+    int back = dq1.back();
+    std::cout << back <<std::endl;
+
     std::cout << "Constructor tests passed!" << std::endl;
 }
 
@@ -57,6 +60,55 @@ void testDequeOperations() {
     std::cout << "Basic operations tests passed!" << std::endl;
 }
 
+void testDequePushPop() {
+    std::cout << "\n=== 测试push和pop操作 ===" << std::endl;
+    
+    mstl::Deque<int> dq;
+    
+    // 测试push_back
+    for (int i = 0; i < 5; ++i) {
+        dq.push_back(i);
+        std::cout <<dq.size() <<std::endl;
+        assert(dq.size() == static_cast<mstl::Deque<int>::size_type>(i + 1));
+        assert(dq.back() == i);
+    }
+    printDeque(dq, "After push_back");
+    
+    // 测试push_front
+    for (int i = 5; i < 10; ++i) {
+        dq.push_front(i);
+        assert(dq.size() == static_cast<mstl::Deque<int>::size_type>(i + 1));
+        assert(dq.front() == i);
+    }
+    printDeque(dq, "After push_front");
+    
+    // 测试pop_back
+    for (int i = 0; i < 3; ++i) {
+        int last = dq.back();
+        dq.pop_back();
+        assert(dq.size() == static_cast<mstl::Deque<int>::size_type>(10 - i - 1));
+        assert(dq.back() != last);
+    }
+    printDeque(dq, "After pop_back");
+    
+    // 测试pop_front
+    for (int i = 0; i < 3; ++i) {
+        int first = dq.front();
+        dq.pop_front();
+        assert(dq.size() == static_cast<mstl::Deque<int>::size_type>(7 - i - 1));
+        assert(dq.front() != first);
+    }
+    printDeque(dq, "After pop_front");
+    
+    // 测试clear
+    dq.clear();
+    assert(dq.empty());
+    assert(dq.size() == 0);
+    printDeque(dq, "After clear");
+    
+    std::cout << "Push and pop operations tests passed!" << std::endl;
+}
+
 int main() {
     std::cout << "Starting mstl::deque tests..." << std::endl;
     
@@ -64,6 +116,7 @@ int main() {
         testDequeConstructor();
         testDequeIterator();
         testDequeOperations();
+        testDequePushPop();
         
         std::cout << "\nAll tests completed successfully!" << std::endl;
     }
