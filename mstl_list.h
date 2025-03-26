@@ -6,9 +6,10 @@
 #include "mstl_iterator.h"
 #include "mstl_alloc.h"
 #include "mstl_iterator_tags.h"
-
+#include "mstl_allocator.h"
 namespace mstl
 {
+
     template <typename T>
     struct ListNode
     {
@@ -94,7 +95,7 @@ namespace mstl
         }
     };
 
-    template<typename T, class Alloc = alloc> 
+    template<typename T, typename Alloc = alloc> 
     class List {
     public:
         using value_type = T;

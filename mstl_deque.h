@@ -1,0 +1,7 @@
+#ifndef __MSGI_STL_INTERNAL_DEQUE_H
+#define __MSGI_STL_INTERNAL_DEQUE_H
+
+
+
+
+#endif
