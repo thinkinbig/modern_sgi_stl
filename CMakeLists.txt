@@ -40,6 +40,7 @@ add_executable(mpthread_alloc_test mpthread_alloc_test.cpp)
 add_executable(mstl_iterator_test mstl_iterator_test.cpp)
 add_executable(mstl_vector_test mstl_vector_test.cpp)
 add_executable(mstl_list_test mstl_list_test.cpp)
+add_executable(mstl_deque_test mstl_deque_test.cpp)
 # 链接pthread库
 find_package(Threads REQUIRED)
 target_link_libraries(mpthread_alloc_test PRIVATE Threads::Threads)
@@ -53,6 +54,7 @@ add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpth
 add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_iterator_test)
 add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_vector_test)
 add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
+add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deque_test)
 
 # 打印调试信息
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")

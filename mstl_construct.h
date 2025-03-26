@@ -15,6 +15,7 @@ inline void construct(T1* p, Args&&... args) {
     ::new ((void*)p) T1(std::forward<Args>(args)...);
 }
 
+
 // 销毁单个对象函数
 template <typename T>
 inline void destroy(T* pointer) {
