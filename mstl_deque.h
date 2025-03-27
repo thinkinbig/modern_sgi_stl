@@ -193,6 +193,24 @@ namespace mstl
             fill_initialize(n, value);
         }
         
+        // 析构函数
+        ~Deque() {
+            if (map) {
+                // 销毁所有元素
+                destroy(start, finish);
+                
+                // 释放所有节点
+                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                    deallocate_node(*node);
+                }
+                
+                // 释放 map 数组
+                map_allocator::deallocate(map, map_size);
+                map = nullptr;
+                map_size = 0;
+            }
+        }
+
         iterator begin() { return start; }
         const_iterator begin() const { return const_iterator(start.cur, start.node); }
         iterator end() { return finish; }
@@ -242,9 +260,14 @@ namespace mstl
                 }
             }
             catch(...) {
-                // commit or rollback
-                destroy(map, cur);
+                // 释放已分配的节点
+                for (map_pointer node = nstart; node < cur; ++node) {
+                    deallocate_node(*node);
+                }
+                // 释放 map 数组
                 map_allocator::deallocate(map, map_size);
+                map = nullptr;
+                map_size = 0;
                 throw;
             }
 
@@ -324,15 +347,18 @@ namespace mstl
         }
 
         void clear() {
-            // 销毁所有元素
+            // 销毁并释放中间节点
             destroy(start, finish);
-
-            // 释放所有缓冲区，保留一个空缓冲区
-            for (map_pointer node = start.node; node <= finish.node; ++node) {
-                data_allocator::deallocate(*node, buffer_size());
+            // 处理首尾节点
+            if (start.node != finish.node) {
+                destroy(start.cur, start.last);
+                destroy(finish.first, finish.cur);
+                deallocate_node(finish.first);
+            } else {
+                destroy(start.cur, finish.cur);
             }
+
             // 重置迭代器
-            start.set_node(map + (map_size - 1) / 2);
             finish = start;
         }
 
