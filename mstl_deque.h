@@ -172,7 +172,7 @@ namespace mstl
 
         using data_allocator = SimpleAlloc<Tp, Alloc>;
         using map_allocator = SimpleAlloc<pointer, Alloc>;
-
+        
         static size_t buffer_size() { return __deque_buf_size(sizeof(Tp)); }
 
     protected:
@@ -371,16 +371,66 @@ namespace mstl
                 data_allocator::deallocate(*node, buffer_size());
             }
             
-            if (start.node != finish.node) {
-                destroy(start.cur, start.last);
-                destroy(finish.first, finish.cur);
+            if (start.node != finish.node) { // 至少有头尾两个缓冲区
+                destroy(start.cur, start.last); // 将头缓冲区的目前所有元素析构
+                destroy(finish.first, finish.cur); // 将尾缓冲区的目前所有元素析构
+                // 以下释放尾缓冲区。 注意， 头缓冲区保留
                 data_allocator::deallocate(finish.first, buffer_size());
-            } else {
-                destroy(start.cur, finish.cur);
+            } else { // 只有一个缓冲区
+                destroy(start.cur, finish.cur); //将此唯一缓冲区内的所有元素析构
+                // 注意， 并不释放缓冲区空间， 这唯一的缓冲区将保留
             }
             
             finish = start;
         }
+
+        iterator erase(iterator pos) {
+            iterator next = pos;
+            ++next;
+            difference_type index = pos - start; // 清除点之前的所有元素
+            if (index < (size() >> 1) { // 如果清除点之前的元素比较少
+                std::copy_backward(start, pos, next); // 就移动清除点之前的元素
+                pop_front();
+            } else {
+                std::copy(next, finish, pos); // 清除点之后的元素比较少
+                pop_back();                   // 移动清除点之后的元素
+            }
+            return start + index;
+        }
+
+        iterator erase(iterator first, iterator last) {
+            if (first == start && last == finish) {
+                clear();
+                return finish;
+            } else {
+                difference_type n = last - first;  //清除区间的长度
+                difference_type elems_before = first - start; //清除区间前方的元素个数
+                if (elems_before < (size() - n) / 2) {  // 如果前方元素较少
+                    std::copy_backward(start, first, last); // 移动前方元素
+                    iterator new_start = start + n;  // 标记 deque新起点
+                    destroy(start, new_start); // 释放冗余的元素
+                    
+                    // 释放冗余的缓冲区内存
+                    for (map_pointer cur = start.node; cur < new_start.node; ++cur) {
+                        data_allocator::deallocate(*cur, buffer_size());       
+                    }
+                    start = new_start;
+                } else {
+                    std::copy(last, finish, first);
+                    iterator new_finish = finish - n;
+                    destroy(new_finish, finish);
+
+                    // 释放冗余的缓冲区内存
+                    for (map_pointer cur = new_finish; cur < finish; ++cur) {
+                        data_allocator.deallocate(*cur, buffer_size());
+                    }
+                    finish = new_finish;
+                }
+
+                return start + elems_before;
+            }
+        }
+        
 
         void reserve_map_at_front(size_type nodes_to_add = 1) {
             if (static_cast<size_type>(start.node - map) < nodes_to_add) {
