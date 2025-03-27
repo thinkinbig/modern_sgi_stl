@@ -1,5 +1,6 @@
 #include "mstl_alloc.h"
 #include "mstl_allocator.h"
+#include "mpthread_alloc.h"
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -85,7 +86,7 @@ void testMultithreadPerformance(size_t numOps, size_t size, size_t numThreads) {
     size_t opsPerThread = numOps / numThreads;
     
     // 创建分配器
-    mstl::allocator<int, mstl::thread_safe_alloc> alloc;
+    mstl::allocator<int, mstl::PthreadAllocatorTemplate<>> alloc;
     
     // 启动所有线程
     auto start = std::chrono::steady_clock::now();
@@ -153,15 +154,15 @@ void testThreadContention() {
     
     // 测试多线程版本
     {
-        std::cout << "多线程版本:\n";
+        std::cout << "多线程版本 :\n";
         auto start = std::chrono::high_resolution_clock::now();
         
         std::vector<std::thread> threads;
         for(int i = 0; i < numThreads; ++i) {
-            threads.emplace_back([numAllocations, allocationSize]() {
+            threads.emplace_back([]() {
                 for(int j = 0; j < numAllocations; ++j) {
-                    void* p = mstl::thread_safe_alloc::allocate(allocationSize);
-                    mstl::thread_safe_alloc::deallocate(p, allocationSize);
+                    void* p = mstl::PthreadAllocatorTemplate<>::allocate(allocationSize);
+                    mstl::PthreadAllocatorTemplate<>::deallocate(p, allocationSize);
                 }
             });
         }

@@ -268,7 +268,7 @@ namespace mstl
             }
 
             // Calculate how much to allocate
-            size_t bytes_to_get = 2 * total_bytes + (heap_size >> 4);
+            size_t bytes_to_get = 2 * total_bytes + detail::align_up(heap_size >> 4);
 
             // Try to allocate a new pool
             start_free = static_cast<char *>(::operator new(bytes_to_get, std::nothrow));
@@ -292,7 +292,7 @@ namespace mstl
                 }
 
                 // Last resort - try allocating exactly what's needed, use malloc
-                start_free = static_cast<char *>(malloc_alloc::allocate(size));
+                start_free = static_cast<char *>(malloc_alloc::allocate(total_bytes));
 
                 if (!start_free)
                 {
@@ -300,11 +300,11 @@ namespace mstl
                 }
 
                 // Set end_free for the minimal allocation
-                end_free = start_free + size;
+                end_free = start_free + total_bytes;
 
                 // Return directly instead of recursive call
                 result = start_free;
-                start_free += size;
+                start_free += total_bytes;
                 return result;
             }
 
