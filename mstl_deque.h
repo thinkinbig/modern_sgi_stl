@@ -267,16 +267,10 @@ namespace mstl
         }
 
 
-        void push_back(const value_type& x) {
-            __push_back(x);
-        }
-
-        void push_back(value_type&& x) {
-            __push_back(std::move(x));
-        }
-
-        template <typename U> 
-        void __push_back(U&& x) {
+        template <typename U>
+        void push_back(U&& x) 
+            requires std::constructible_from<value_type, U>
+        {
             if (finish.cur != finish.last - 1) {
                 construct(finish.cur, std::forward<U>(x));
                 ++finish.cur;
@@ -286,50 +280,14 @@ namespace mstl
         }
 
         template <typename U>
-        void __push_back_aux(U&& x) {
-            reserve_map_at_back();
-            *(finish.node + 1) = allocate_node();
-            try {
-                construct(finish.cur, std::forward<U>(x));
-                finish.set_node(finish.node + 1);
-                finish.cur = finish.first;
-            } catch (...) {
-                deallocate_node(*(finish.node + 1));
-                throw;
-            }
-        }
-
-        void push_front(const value_type& x) {
-            __push_front(x);
-        }
-
-        void push_front(value_type&& x) {
-            __push_front(std::move(x));
-        }
-
-        template <typename U>
-        void __push_front(U&& x) {
+        void push_front(U&& x)
+            requires std::constructible_from<value_type, U>
+        {
             if (start.cur != start.first) {
                 construct(start.cur - 1, std::forward<U>(x));
                 --start.cur;
             } else {
                 __push_front_aux(std::forward<U>(x));
-            }
-        }
-
-        template <typename U>
-        void __push_front_aux(U&& x) {
-            reserve_map_at_front();
-            *(start.node - 1) = allocate_node();
-            try {
-                start.set_node(start.node - 1);
-                start.cur = start.last - 1;
-                construct(start.cur, std::forward<U>(x));
-            } catch (...) {
-                start.set_node(start.node + 1);
-                start.cur = start.first;
-                deallocate_node(*(start.node - 1));
-                throw;
             }
         }
 
@@ -368,12 +326,11 @@ namespace mstl
         void clear() {
             // 销毁所有元素
             destroy(start, finish);
-            
+
             // 释放所有缓冲区，保留一个空缓冲区
             for (map_pointer node = start.node; node <= finish.node; ++node) {
                 data_allocator::deallocate(*node, buffer_size());
             }
-            
             // 重置迭代器
             start.set_node(map + (map_size - 1) / 2);
             finish = start;
@@ -404,9 +361,9 @@ namespace mstl
                     std::copy_backward(start, first, last);
                     iterator new_start = start + n;
                     destroy(start, new_start);
-                    
+
                     for (map_pointer cur = start.node; cur < new_start.node; ++cur) {
-                        data_allocator::deallocate(*cur, buffer_size());       
+                        data_allocator::deallocate(*cur, buffer_size());
                     }
                     start = new_start;
                 } else {
@@ -422,7 +379,7 @@ namespace mstl
                 return start + elems_before;
             }
         }
-        
+
         void reserve_map_at_front(size_type nodes_to_add = 1) {
             if (static_cast<size_type>(start.node - map) < nodes_to_add) {
                 reallocate_map(nodes_to_add, true);
@@ -492,7 +449,9 @@ namespace mstl
         }
 
         template<typename... Args>
-        iterator emplace(iterator position, Args&&... args) {
+        iterator emplace(iterator position, Args&&... args) 
+            requires std::constructible_from<value_type, Args...>
+        {
             if (position.cur == start.cur) {
                 emplace_front(std::forward<Args>(args)...);
                 return start;
@@ -534,7 +493,9 @@ namespace mstl
         }
 
         template<typename... Args>
-        void emplace_front(Args&&... args) {
+        void emplace_front(Args&&... args)
+            requires std::constructible_from<value_type, Args...>
+        {
             if (start.cur != start.first) {
                 construct(start.cur - 1, std::forward<Args>(args)...);
                 --start.cur;
@@ -544,7 +505,9 @@ namespace mstl
         }
 
         template<typename... Args>
-        void emplace_back(Args&&... args) {
+        void emplace_back(Args&&... args)
+            requires std::constructible_from<value_type, Args...>
+        {
             if (finish.cur != finish.last - 1) {
                 construct(finish.cur, std::forward<Args>(args)...);
                 ++finish.cur;
@@ -554,7 +517,9 @@ namespace mstl
         }
 
         template<typename... Args>
-        void __push_front_aux(Args&&... args) {
+        void __push_front_aux(Args&&... args)
+            requires std::constructible_from<value_type, Args...>
+        {
             reserve_map_at_front();
             *(start.node - 1) = allocate_node();
             try {
@@ -570,7 +535,9 @@ namespace mstl
         }
 
         template<typename... Args>
-        void __push_back_aux(Args&&... args) {
+        void __push_back_aux(Args&&... args)
+            requires std::constructible_from<value_type, Args...>
+        {
             reserve_map_at_back();
             *(finish.node + 1) = allocate_node();
             try {

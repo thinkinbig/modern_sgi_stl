@@ -248,25 +248,25 @@ namespace mstl
             }
         }
 
-        void splice(iterator position, List& x, iterator i) {
+        void splice(iterator position, [[maybe_unused]] List& x, iterator i) {
             if (position != i) {
                 transfer(position, i, i.kNode->next);
             }
         }
 
-        void splice(iterator position, List&& x, iterator i) {
+        void splice(iterator position, [[maybe_unused]] List&& x, iterator i) {
             if (position != i) {
                 transfer(position, i, i.kNode->next);
             }
         }
 
-        void splice(iterator position, List& x, iterator first, iterator last) {
+        void splice(iterator position, [[maybe_unused]] List& x, iterator first, iterator last) {
             if (first != last) {
                 transfer(position, first, last);
             }
         }
 
-        void splice(iterator position, List&& x, iterator first, iterator last) {
+        void splice(iterator position, [[maybe_unused]] List&& x, iterator first, iterator last) {
             if (first != last) {
                 transfer(position, first, last);
             }
@@ -286,7 +286,7 @@ namespace mstl
 
     protected:
         Node* kNode;
-        using node_allocator = typename allocator_traits<SimpleAlloc<T, Alloc>>::rebind_alloc<Node>;
+        using node_allocator = typename allocator_traits<SimpleAlloc<T, Alloc>>::template rebind_alloc<Node>;
     
         void createNode() {
             kNode = getNode();

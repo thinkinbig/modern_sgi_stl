@@ -19,10 +19,10 @@ struct allocator_traits
     using const_pointer = typename Alloc::const_pointer;
     using void_pointer = std::conditional_t<std::is_same_v<pointer, value_type*>,
                                           void*,
-                                          typename std::pointer_traits<pointer>::rebind<void>>;
+                                          typename std::pointer_traits<pointer>::template rebind<void>>;
     using const_void_pointer = std::conditional_t<std::is_same_v<const_pointer, const value_type*>,
                                                 const void*,
-                                                typename std::pointer_traits<const_pointer>::rebind<const void>>;
+                                                typename std::pointer_traits<const_pointer>::template rebind<const void>>;
     using difference_type = typename Alloc::difference_type;
     using size_type = typename Alloc::size_type;
     using propagate_on_container_copy_assignment = std::false_type;
