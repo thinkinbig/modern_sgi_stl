@@ -121,7 +121,7 @@ namespace mstl
             insert(begin(), x.begin(), x.end());
         }
 
-        List(List&& x) {
+        List(List&& x) noexcept {
             kNode = x.kNode;
             x.kNode = nullptr;
         }
@@ -134,7 +134,7 @@ namespace mstl
             return *this;
         }
 
-        List& operator=(List&& x) {
+        List& operator=(List&& x) noexcept {
             if (this != &x) {
                 clear();
                 kNode = x.kNode;
@@ -145,7 +145,7 @@ namespace mstl
 
         ~List() {
             clear();
-            delete kNode;
+            putNode(kNode);
         }
 
         // 迭代器相关
@@ -286,7 +286,7 @@ namespace mstl
 
     protected:
         Node* kNode;
-        using node_allocator = typename allocator_traits<SimpleAlloc<T, alloc>>::rebind_alloc<Node>;
+        using node_allocator = typename allocator_traits<SimpleAlloc<T, Alloc>>::rebind_alloc<Node>;
     
         void createNode() {
             kNode = getNode();
@@ -311,8 +311,13 @@ namespace mstl
             }
         }
 
-        void putNode(Node* p) { node_allocator::deallocate(p); }
-        Node* getNode() { return node_allocator::allocate(sizeof(Node));  }
+        void putNode(Node* p) { 
+            node_allocator::deallocate(p, 1);
+        }
+        
+        Node* getNode() { 
+            return node_allocator::allocate(1);
+        }
     };
 }
 #endif

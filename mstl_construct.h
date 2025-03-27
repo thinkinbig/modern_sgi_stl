@@ -12,7 +12,7 @@ namespace mstl {
 // 构造对象函数
 template <typename T1, typename... Args>
 inline void construct(T1* p, Args&&... args) {
-    ::new ((void*)p) T1(std::forward<Args>(args)...);
+    ::new (p) T1(std::forward<Args>(args)...);
 }
 
 

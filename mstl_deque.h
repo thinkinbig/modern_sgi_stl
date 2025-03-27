@@ -366,34 +366,29 @@ namespace mstl
         }
 
         void clear() {
-            for (map_pointer node = start.node + 1; node < finish.node; ++node) {
-                destroy(*node, *node + buffer_size());
+            // 销毁所有元素
+            destroy(start, finish);
+            
+            // 释放所有缓冲区，保留一个空缓冲区
+            for (map_pointer node = start.node; node <= finish.node; ++node) {
                 data_allocator::deallocate(*node, buffer_size());
             }
             
-            if (start.node != finish.node) { // 至少有头尾两个缓冲区
-                destroy(start.cur, start.last); // 将头缓冲区的目前所有元素析构
-                destroy(finish.first, finish.cur); // 将尾缓冲区的目前所有元素析构
-                // 以下释放尾缓冲区。 注意， 头缓冲区保留
-                data_allocator::deallocate(finish.first, buffer_size());
-            } else { // 只有一个缓冲区
-                destroy(start.cur, finish.cur); //将此唯一缓冲区内的所有元素析构
-                // 注意， 并不释放缓冲区空间， 这唯一的缓冲区将保留
-            }
-            
+            // 重置迭代器
+            start.set_node(map + (map_size - 1) / 2);
             finish = start;
         }
 
         iterator erase(iterator pos) {
             iterator next = pos;
             ++next;
-            difference_type index = pos - start; // 清除点之前的所有元素
-            if (index < (size() >> 1) { // 如果清除点之前的元素比较少
-                std::copy_backward(start, pos, next); // 就移动清除点之前的元素
+            difference_type index = pos - start;
+            if (index < difference_type(size() >> 1)) {
+                std::copy_backward(start, pos, next);
                 pop_front();
             } else {
-                std::copy(next, finish, pos); // 清除点之后的元素比较少
-                pop_back();                   // 移动清除点之后的元素
+                std::copy(next, finish, pos);
+                pop_back();
             }
             return start + index;
         }
@@ -403,14 +398,13 @@ namespace mstl
                 clear();
                 return finish;
             } else {
-                difference_type n = last - first;  //清除区间的长度
-                difference_type elems_before = first - start; //清除区间前方的元素个数
-                if (elems_before < (size() - n) / 2) {  // 如果前方元素较少
-                    std::copy_backward(start, first, last); // 移动前方元素
-                    iterator new_start = start + n;  // 标记 deque新起点
-                    destroy(start, new_start); // 释放冗余的元素
+                difference_type n = last - first;
+                difference_type elems_before = first - start;
+                if (elems_before < difference_type((size() - n) / 2)) {
+                    std::copy_backward(start, first, last);
+                    iterator new_start = start + n;
+                    destroy(start, new_start);
                     
-                    // 释放冗余的缓冲区内存
                     for (map_pointer cur = start.node; cur < new_start.node; ++cur) {
                         data_allocator::deallocate(*cur, buffer_size());       
                     }
@@ -420,18 +414,15 @@ namespace mstl
                     iterator new_finish = finish - n;
                     destroy(new_finish, finish);
 
-                    // 释放冗余的缓冲区内存
-                    for (map_pointer cur = new_finish; cur < finish; ++cur) {
-                        data_allocator.deallocate(*cur, buffer_size());
+                    for (map_pointer cur = new_finish.node + 1; cur <= finish.node; ++cur) {
+                        data_allocator::deallocate(*cur, buffer_size());
                     }
                     finish = new_finish;
                 }
-
                 return start + elems_before;
             }
         }
         
-
         void reserve_map_at_front(size_type nodes_to_add = 1) {
             if (static_cast<size_type>(start.node - map) < nodes_to_add) {
                 reallocate_map(nodes_to_add, true);
@@ -469,6 +460,129 @@ namespace mstl
             start.set_node(new_start);
             finish.set_node(new_start + old_num_nodes - 1);
         }
+
+        iterator insert(iterator position, const value_type& x) {
+            if (position.cur == start.cur) {
+                push_front(x);
+                return start;
+            }
+            if (position.cur == finish.cur) {
+                push_back(x);
+                iterator tmp = finish;
+                --tmp;
+                return tmp;
+            } else {
+                return __insert_aux(position, x);
+            }
+        }
+
+        iterator insert(iterator position, value_type&& x) {
+            if (position.cur == start.cur) {
+                push_front(std::move(x));
+                return start;
+            }
+            if (position.cur == finish.cur) {
+                push_back(std::move(x));
+                iterator tmp = finish;
+                --tmp;
+                return tmp;
+            } else {
+                return __insert_aux(position, std::move(x));
+            }
+        }
+
+        template<typename... Args>
+        iterator emplace(iterator position, Args&&... args) {
+            if (position.cur == start.cur) {
+                emplace_front(std::forward<Args>(args)...);
+                return start;
+            }
+            if (position.cur == finish.cur) {
+                emplace_back(std::forward<Args>(args)...);
+                iterator tmp = finish;
+                --tmp;
+                return tmp;
+            } else {
+                return __insert_aux(position, std::forward<Args>(args)...);
+            }
+        }
+
+        template<typename... Args>
+        iterator __insert_aux(iterator position, Args&&... args) {
+            difference_type index = position - start;
+            if (index < difference_type(size() / 2)) {
+                push_front(front());
+                iterator front1 = start; 
+                ++front1;
+                iterator front2 = front1;
+                ++front2;
+                position = start + index;
+                iterator position1 = position;
+                ++position1;
+                std::copy(front2, position1, front1);
+            } else {
+                push_back(back());
+                iterator back1 = finish;
+                --back1;
+                iterator back2 = back1;
+                --back2;
+                position = start + index;
+                std::copy_backward(position, back2, back1);
+            }
+            construct(position.cur, std::forward<Args>(args)...);
+            return position;
+        }
+
+        template<typename... Args>
+        void emplace_front(Args&&... args) {
+            if (start.cur != start.first) {
+                construct(start.cur - 1, std::forward<Args>(args)...);
+                --start.cur;
+            } else {
+                __push_front_aux(std::forward<Args>(args)...);
+            }
+        }
+
+        template<typename... Args>
+        void emplace_back(Args&&... args) {
+            if (finish.cur != finish.last - 1) {
+                construct(finish.cur, std::forward<Args>(args)...);
+                ++finish.cur;
+            } else {
+                __push_back_aux(std::forward<Args>(args)...);
+            }
+        }
+
+        template<typename... Args>
+        void __push_front_aux(Args&&... args) {
+            reserve_map_at_front();
+            *(start.node - 1) = allocate_node();
+            try {
+                start.set_node(start.node - 1);
+                start.cur = start.last - 1;
+                construct(start.cur, std::forward<Args>(args)...);
+            } catch (...) {
+                start.set_node(start.node + 1);
+                start.cur = start.first;
+                deallocate_node(*(start.node - 1));
+                throw;
+            }
+        }
+
+        template<typename... Args>
+        void __push_back_aux(Args&&... args) {
+            reserve_map_at_back();
+            *(finish.node + 1) = allocate_node();
+            try {
+                construct(finish.cur, std::forward<Args>(args)...);
+                finish.set_node(finish.node + 1);
+                finish.cur = finish.first;
+            } catch (...) {
+                deallocate_node(*(finish.node + 1));
+                throw;
+            }
+        }
+        
 
     };
 } // namespace mstl
