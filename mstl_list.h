@@ -317,6 +317,17 @@ public:
         }
     }
 
+    friend bool operator==(const List<T, Alloc>& x, const List<T, Alloc>& y) {
+        if (&x == &y) return true;  // 自反性检查 - 如果是同一个对象则立即返回true
+        if (x.size() != y.size()) return false;
+        return std::equal(x.begin(), x.end(), y.begin());
+    }
+
+    friend bool operator<(const List<T, Alloc>& x, const List<T, Alloc>& y) {
+        return std::lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
+    }
+
+
 protected:
     Node* kNode;
     using node_allocator =

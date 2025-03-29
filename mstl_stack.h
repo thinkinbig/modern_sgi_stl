@@ -12,7 +12,6 @@ class Stack {
     using reference = Sequence::reference;
     using const_reference = Sequence::const_reference;
 
-    // 友元运算符重载函数声明
     friend bool operator==(const Stack& x, const Stack& y) {
         return x.c == y.c;
     }
