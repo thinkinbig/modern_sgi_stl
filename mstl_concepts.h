@@ -2,8 +2,8 @@
 #define __MSGI_STL_INTERNAL_CONCEPTS_H
 
 #include <concepts>
-#include <type_traits>
 #include <iterator>
+#include <type_traits>
 #include "mstl_iterator_tags.h"
 #include "mstl_iterator_traits.h"
 
@@ -29,7 +29,7 @@ template <typename T>
 concept TriviallyDestructible = std::is_trivially_destructible_v<T>;
 
 // 基本迭代器概念
-template<typename I>
+template <typename I>
 concept Iterator = requires(I i) {
     typename iterator_traits<I>::iterator_category;
     typename iterator_traits<I>::value_type;
@@ -39,7 +39,7 @@ concept Iterator = requires(I i) {
 };
 
 // 输入迭代器概念
-template<typename I>
+template <typename I>
 concept InputIterator = Iterator<I> && requires(I i) {
     { *i } -> std::same_as<typename iterator_traits<I>::reference>;
     { ++i } -> std::same_as<I&>;
@@ -48,7 +48,7 @@ concept InputIterator = Iterator<I> && requires(I i) {
 };
 
 // 输出迭代器概念
-template<typename I, typename T>
+template <typename I, typename T>
 concept OutputIterator = Iterator<I> && requires(I i, T t) {
     { *i = t } -> std::same_as<typename iterator_traits<I>::reference>;
     { ++i } -> std::same_as<I&>;
@@ -56,20 +56,28 @@ concept OutputIterator = Iterator<I> && requires(I i, T t) {
 };
 
 // 前向迭代器概念
-template<typename I>
-concept ForwardIterator = InputIterator<I> && std::is_base_of_v<forward_iterator_tag, typename iterator_traits<I>::iterator_category>;
+template <typename I>
+concept ForwardIterator =
+    InputIterator<I> &&
+    std::is_base_of_v<forward_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
 // 双向迭代器概念
-template<typename I>
-concept BidirectionalIterator = ForwardIterator<I> && std::is_base_of_v<bidirectional_iterator_tag, typename iterator_traits<I>::iterator_category>;
+template <typename I>
+concept BidirectionalIterator =
+    ForwardIterator<I> &&
+    std::is_base_of_v<bidirectional_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
 // 随机访问迭代器概念
-template<typename I>
-concept RandomAccessIterator = BidirectionalIterator<I> && std::is_base_of_v<random_access_iterator_tag, typename iterator_traits<I>::iterator_category>;
+template <typename I>
+concept RandomAccessIterator =
+    BidirectionalIterator<I> &&
+    std::is_base_of_v<random_access_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
 // 连续迭代器概念
-template<typename I>
-concept ContiguousIterator = RandomAccessIterator<I> && std::is_base_of_v<contiguous_iterator_tag, typename iterator_traits<I>::iterator_category>;
+template <typename I>
+concept ContiguousIterator =
+    RandomAccessIterator<I> &&
+    std::is_base_of_v<contiguous_iterator_tag, typename iterator_traits<I>::iterator_category>;
 
 // 容器相关合约
 template <typename C>
@@ -104,17 +112,19 @@ concept AllocatorBase = requires {
 };
 
 template <typename A, typename T = typename A::value_type>
-concept StandardAllocator = AllocatorBase<A> && 
-    requires(A a, typename A::size_type n, typename A::pointer p) {
-    { a.allocate(n) } -> std::same_as<typename A::pointer>;
-    { a.deallocate(p, n) } -> std::same_as<void>;
-    { a.address(std::declval<typename A::reference>()) } -> std::same_as<typename A::pointer>;
-    { a.address(std::declval<typename A::const_reference>()) } -> std::same_as<typename A::const_pointer>;
-    { a.max_size() } -> std::convertible_to<typename A::size_type>;
-    
-    // 检查rebind成员
-    typename A::template rebind<int>::other;
-};
+concept StandardAllocator =
+    AllocatorBase<A> && requires(A a, typename A::size_type n, typename A::pointer p) {
+        { a.allocate(n) } -> std::same_as<typename A::pointer>;
+        { a.deallocate(p, n) } -> std::same_as<void>;
+        { a.address(std::declval<typename A::reference>()) } -> std::same_as<typename A::pointer>;
+        {
+            a.address(std::declval<typename A::const_reference>())
+        } -> std::same_as<typename A::const_pointer>;
+        { a.max_size() } -> std::convertible_to<typename A::size_type>;
+
+        // 检查rebind成员
+        typename A::template rebind<int>::other;
+    };
 
 // 简化的分配器，仅需要基本操作
 template <typename A, typename T>
@@ -128,7 +138,8 @@ template <typename F, typename... Args>
 concept Invocable = std::invocable<F, Args...>;
 
 template <typename F, typename... Args>
-concept Predicate = Invocable<F, Args...> && std::convertible_to<std::invoke_result_t<F, Args...>, bool>;
+concept Predicate =
+    Invocable<F, Args...> && std::convertible_to<std::invoke_result_t<F, Args...>, bool>;
 
 template <typename F, typename T>
 concept UnaryPredicate = Predicate<F, T>;
@@ -139,6 +150,6 @@ concept BinaryPredicate = Predicate<F, T, U>;
 template <typename F, typename T, typename U>
 concept Compare = BinaryPredicate<F, T, U> && BinaryPredicate<F, U, T>;
 
-} // namespace mstl
+}  // namespace mstl
 
-#endif // __MSGI_STL_INTERNAL_CONCEPTS_H 
+#endif  // __MSGI_STL_INTERNAL_CONCEPTS_H

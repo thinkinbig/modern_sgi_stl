@@ -6,6 +6,37 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 
+# 查找clang-format
+find_program(CLANG_FORMAT "clang-format")
+if(CLANG_FORMAT)
+    message(STATUS "clang-format: ${CLANG_FORMAT}")
+else()
+    message(WARNING "clang-format not found, formatting will be disabled")
+endif()
+
+# 添加格式化目标
+if(CLANG_FORMAT)
+    # 获取所有源文件和头文件
+    file(GLOB_RECURSE ALL_SOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/*.h
+    )
+    
+    # 添加格式化目标
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT} -i ${ALL_SOURCE_FILES}
+        COMMENT "formatting code..."
+        VERBATIM
+    )
+    
+    # 添加检查格式化目标
+    add_custom_target(check-format
+        COMMAND ${CLANG_FORMAT} --dry-run --Werror ${ALL_SOURCE_FILES}
+        COMMENT "checking code format..."
+        VERBATIM
+    )
+endif()
+
 # 设置调试选项
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra")
@@ -46,6 +77,7 @@ add_executable(mstl_iterator_test mstl_iterator_test.cpp)
 add_executable(mstl_vector_test mstl_vector_test.cpp)
 add_executable(mstl_list_test mstl_list_test.cpp)
 add_executable(mstl_deque_test mstl_deque_test.cpp)
+add_executable(mstl_stack_test mstl_stack_test.cpp)
 
 # 为所有测试添加调试信息
 set_target_properties(
@@ -81,6 +113,7 @@ add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_
 add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_vector_test)
 add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
 add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deque_test)
+add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_stack_test)
 
 # 设置测试属性
 set_tests_properties(

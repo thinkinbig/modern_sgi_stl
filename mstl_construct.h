@@ -1,11 +1,11 @@
 #ifndef __MSGI_STL_INTERNAL_CONSTRUCT_H
 #define __MSGI_STL_INTERNAL_CONSTRUCT_H
 
+#include <iterator>
 #include <new>
 #include <type_traits>
-#include <iterator>
-#include "mstl_iterator_traits.h"
 #include "mstl_concepts.h"
+#include "mstl_iterator_traits.h"
 
 namespace mstl {
 
@@ -15,7 +15,6 @@ inline void construct(T1* p, Args&&... args) {
     ::new (p) T1(std::forward<Args>(args)...);
 }
 
-
 // 销毁单个对象函数
 template <typename T>
 inline void destroy(T* pointer) {
@@ -24,7 +23,7 @@ inline void destroy(T* pointer) {
 
 // 销毁迭代器范围内对象 - 特化版本（可平凡销毁的类型）
 template <InputIterator I>
-inline void __destroy_aux([[maybe_unused]]I first, [[maybe_unused]]I last, ::std::true_type) {
+inline void __destroy_aux([[maybe_unused]] I first, [[maybe_unused]] I last, ::std::true_type) {
     // 平凡析构类型不需要显式调用析构函数
 }
 
@@ -60,6 +59,6 @@ inline void destroy(char*) {}
 // 单个对象wchar_t版本
 inline void destroy(wchar_t*) {}
 
-} // namespace mstl
+}  // namespace mstl
 
-#endif // __MSGI_STL_INTERNAL_CONSTRUCT_H
+#endif  // __MSGI_STL_INTERNAL_CONSTRUCT_H
