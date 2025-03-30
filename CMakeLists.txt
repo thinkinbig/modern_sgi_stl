@@ -78,6 +78,7 @@ add_executable(mstl_vector_test mstl_vector_test.cpp)
 add_executable(mstl_list_test mstl_list_test.cpp)
 add_executable(mstl_deque_test mstl_deque_test.cpp)
 add_executable(mstl_stack_test mstl_stack_test.cpp)
+add_executable(mstl_queue_test mstl_queue_test.cpp)
 
 # 为所有测试添加调试信息
 set_target_properties(
@@ -114,7 +115,7 @@ add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_ve
 add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
 add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deque_test)
 add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_stack_test)
-
+add_test(NAME mstl_queue_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_queue_test)
 # 设置测试属性
 set_tests_properties(
     mstl_alloc_test
