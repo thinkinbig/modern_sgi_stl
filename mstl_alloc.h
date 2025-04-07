@@ -11,7 +11,10 @@
 
 namespace mstl {
 
-// malloc-based allocator 通常比 default alloc 速度慢
+// NOLINTBEGIN(cppcoreguidelines-owning-memory)
+// 这个文件包含 STL 的最底层内存分配实现
+// 为了性能考虑，我们直接使用 malloc/free
+// 内存安全性由上层容器保证
 
 template <int inst>
 class MallocAllocTemplate {
@@ -93,7 +96,10 @@ public:
     }
 };
 
-// malloc_alloc out-of-memory handling
+// NOLINTEND(cppcoreguidelines-owning-memory)
+
+// malloc-based allocator 通常比 default alloc 速度慢
+
 template <int inst>
 typename MallocAllocTemplate<inst>::MallocHandler
     MallocAllocTemplate<inst>::kMallocAllocOomHandler = nullptr;

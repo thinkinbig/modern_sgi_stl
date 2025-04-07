@@ -91,6 +91,15 @@ public:
         fillInitialize(n, T());
     }
 
+    template <typename InputIterator>
+    Vector(InputIterator first, InputIterator last) {
+        kStart = allocateAndCopy(first, last);
+        kFinish = kStart + (last - first);
+        kEndOfStorage = kFinish;
+    }
+
+    
+
     ~Vector() {
         destroy(kStart, kFinish);
         deallocate();
@@ -224,6 +233,12 @@ protected:
     iterator allocateAndFill(size_type n, const T& x) {
         iterator result = data_allocator::allocate(n);
         uninitialized_fill_n(result, n, x);
+        return result;
+    }
+
+    iterator allocateAndCopy(const_iterator first, const_iterator last) {
+        iterator result = data_allocator::allocate(last - first);
+        uninitialized_copy(first, last, result);
         return result;
     }
 };

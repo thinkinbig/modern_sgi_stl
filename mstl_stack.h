@@ -15,7 +15,7 @@ class Stack {
     friend bool operator==(const Stack& x, const Stack& y) {
         return x.c == y.c;
     }
-    
+
     friend bool operator<(const Stack& x, const Stack& y) {
         return x.c < y.c;
     }

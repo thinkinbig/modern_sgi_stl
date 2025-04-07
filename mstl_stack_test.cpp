@@ -1,7 +1,7 @@
 #include "mstl_stack.h"
-#include "mstl_list.h"
 #include <cassert>
 #include <iostream>
+#include "mstl_list.h"
 
 using namespace mstl;
 
@@ -100,7 +100,6 @@ void stack_list_test() {
 
     std::cout << "Stack 测试通过！" << std::endl;
 }
-
 
 int main() {
     stack_deque_test();

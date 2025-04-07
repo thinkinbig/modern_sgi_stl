@@ -177,7 +177,8 @@ public:
 
     // 添加比较运算符
     friend bool operator==(const Deque& x, const Deque& y) {
-        if (x.size() != y.size()) return false;
+        if (x.size() != y.size())
+            return false;
         return std::equal(x.begin(), x.end(), y.begin());
     }
 
