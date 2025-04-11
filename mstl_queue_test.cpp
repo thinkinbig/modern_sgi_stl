@@ -1,9 +1,9 @@
 #include "mstl_queue.h"
 #include <cassert>
 #include <iostream>
+#include "mstl_functional.h"
 #include "mstl_list.h"
 #include "mstl_vector.h"
-#include "mstl_functional.h"
 
 using namespace mstl;
 

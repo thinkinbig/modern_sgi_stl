@@ -2,9 +2,9 @@
 #define __MSGI_STL_INTERNAL_QUEUE_H
 
 #include "mstl_deque.h"
-#include "mstl_vector.h"
-#include "mstl_heap.h"
 #include "mstl_functional.h"
+#include "mstl_heap.h"
+#include "mstl_vector.h"
 
 namespace mstl {
 template <typename Tp, typename Sequence = Deque<Tp>>
@@ -96,17 +96,23 @@ public:
         mstl::make_heap(c.begin(), c.end(), comp);
     }
 
-    bool empty() const { return c.empty(); }
+    bool empty() const {
+        return c.empty();
+    }
 
-    size_type size() const { return c.size(); }
+    size_type size() const {
+        return c.size();
+    }
 
-    const_reference top() const { return c.front(); }
+    const_reference top() const {
+        return c.front();
+    }
 
     void push(const value_type& x) {
         try {
             c.push_back(x);
             mstl::push_heap(c.begin(), c.end(), comp);
-        } catch(...){
+        } catch (...) {
             c.clear();
             throw;
         }
@@ -116,7 +122,7 @@ public:
         try {
             mstl::pop_heap(c.begin(), c.end(), comp);
             c.pop_back();
-        } catch(...) {
+        } catch (...) {
             c.clear();
             throw;
         }

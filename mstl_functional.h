@@ -28,4 +28,4 @@ struct greater {
 
 }  // namespace mstl
 
-#endif  // __MSGI_STL_INTERNAL_FUNCTIONAL_H 
+#endif  // __MSGI_STL_INTERNAL_FUNCTIONAL_H

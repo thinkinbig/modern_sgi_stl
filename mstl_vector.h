@@ -98,8 +98,6 @@ public:
         kEndOfStorage = kFinish;
     }
 
-    
-
     ~Vector() {
         destroy(kStart, kFinish);
         deallocate();

@@ -81,6 +81,7 @@ add_executable(mstl_deque_test mstl_deque_test.cpp)
 add_executable(mstl_stack_test mstl_stack_test.cpp)
 add_executable(mstl_queue_test mstl_queue_test.cpp)
 add_executable(mstl_heap_test mstl_heap_test.cpp)
+add_executable(mstl_slist_test mstl_slist_test.cpp)
 
 # 为所有测试添加调试信息
 set_target_properties(
@@ -120,6 +121,7 @@ add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deq
 add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_stack_test)
 add_test(NAME mstl_queue_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_queue_test)
 add_test(NAME mstl_heap_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_heap_test)
+add_test(NAME mstl_slist_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_slist_test)
 # 设置测试属性
 set_tests_properties(
     mstl_alloc_test
@@ -131,6 +133,7 @@ set_tests_properties(
     mstl_list_test
     mstl_deque_test
     mstl_heap_test
+    mstl_slist_test
     PROPERTIES
     ENVIRONMENT "CTEST_FULL_OUTPUT=1"
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
