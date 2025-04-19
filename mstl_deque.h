@@ -18,7 +18,7 @@ size_t __deque_buf_size(size_t sz) {
 
 template <typename Tp, typename Ref, typename Ptr>
 struct DequeIterator {
-    using iterator_category = random_access_iterator_tag;
+    using iterator_category = bidirectional_iterator_tag;
     using value_type = Tp;
     using difference_type = ptrdiff_t;
     using pointer = Ptr;
