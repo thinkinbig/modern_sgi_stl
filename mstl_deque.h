@@ -8,6 +8,7 @@
 #include "mstl_allocator.h"
 #include "mstl_construct.h"
 #include "mstl_uninitialized.h"
+#include "mstl_iterator_tags.h"
 
 namespace mstl {
 
