@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        compiler: [gcc, clang]
+        cpp_std: [17, 20]
+        exclude:
+          - os: windows-latest
+            compiler: clang
+          - os: macos-latest
+            compiler: gcc
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up CMake
+      uses: actions/setup-cmake@v3
+
+    - name: Set up C++ compiler
+      if: matrix.compiler == 'gcc'
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          sudo apt-get update
+          sudo apt-get install -y g++-${{ matrix.cpp_std }}
+        elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+          choco install mingw
+        fi
+
+    - name: Set up C++ compiler
+      if: matrix.compiler == 'clang'
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          sudo apt-get update
+          sudo apt-get install -y clang
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          brew install llvm
+        fi
+
+    - name: Create build directory
+      run: mkdir build && cd build
+
+    - name: Configure CMake
+      run: |
+        cmake .. \
+          -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} \
+          -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build . --config Release
+
+    - name: Run tests
+      run: ctest --output-on-failure 
