@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -61,12 +62,13 @@ jobs:
         cmake ${{ github.workspace }} \
           -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} \
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_FLAGS="-O3"
 
     - name: Build
       working-directory: ${{ github.workspace }}/build
-      run: cmake --build . --config Release
+      run: cmake --build . --config Release --parallel
 
     - name: Run tests
       working-directory: ${{ github.workspace }}/build
-      run: ctest --output-on-failure 
+      run: ctest --output-on-failure --parallel 
