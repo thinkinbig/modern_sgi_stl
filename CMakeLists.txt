@@ -81,7 +81,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(mstl_alloc_test mstl_alloc_test.cpp)
 add_executable(mstl_construct_test mstl_construct_test.cpp)
 add_executable(mstl_uninitialized_test mstl_uninitialized_test.cpp)
-add_executable(mpthread_alloc_test mpthread_alloc_test.cpp)
+if(NOT WIN32)
+    add_executable(mpthread_alloc_test mpthread_alloc_test.cpp)
+endif()
 add_executable(mstl_iterator_test mstl_iterator_test.cpp)
 add_executable(mstl_vector_test mstl_vector_test.cpp)
 add_executable(mstl_list_test mstl_list_test.cpp)
@@ -96,7 +98,6 @@ set_target_properties(
     mstl_alloc_test
     mstl_construct_test
     mstl_uninitialized_test
-    mpthread_alloc_test
     mstl_iterator_test
     mstl_vector_test
     mstl_list_test
@@ -107,9 +108,19 @@ set_target_properties(
     COMPILE_FLAGS "-g -O1"
 )
 
+if(NOT WIN32)
+    set_target_properties(
+        mpthread_alloc_test
+        PROPERTIES
+        COMPILE_FLAGS "-g -O1"
+    )
+endif()
+
 # 链接pthread库
-find_package(Threads REQUIRED)
-target_link_libraries(mpthread_alloc_test PRIVATE Threads::Threads)
+if(NOT WIN32)
+    find_package(Threads REQUIRED)
+    target_link_libraries(mpthread_alloc_test PRIVATE Threads::Threads)
+endif()
 
 # 添加测试
 enable_testing()
@@ -122,7 +133,9 @@ set(CTEST_VERBOSE ON)
 add_test(NAME mstl_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_alloc_test)
 add_test(NAME mstl_construct_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_construct_test)
 add_test(NAME mstl_uninitialized_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_uninitialized_test)
-add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpthread_alloc_test)
+if(NOT WIN32)
+    add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpthread_alloc_test)
+endif()
 add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_iterator_test)
 add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_vector_test)
 add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
@@ -137,7 +150,6 @@ set_tests_properties(
     mstl_alloc_test
     mstl_construct_test
     mstl_uninitialized_test
-    mpthread_alloc_test
     mstl_iterator_test
     mstl_vector_test
     mstl_list_test
@@ -149,6 +161,16 @@ set_tests_properties(
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     LABELS "debug"
 )
+
+if(NOT WIN32)
+    set_tests_properties(
+        mpthread_alloc_test
+        PROPERTIES
+        ENVIRONMENT "CTEST_FULL_OUTPUT=1"
+        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        LABELS "debug"
+    )
+endif()
 
 # 打印调试信息
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
