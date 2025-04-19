@@ -11,7 +11,7 @@ namespace mstl {
 
 // allocator_traits 实现
 template <typename Alloc>
-struct allocator_traits {
+struct AllocatorTraits {
     using allocator_type = Alloc;
     using value_type = typename Alloc::value_type;
     using pointer = typename Alloc::pointer;
@@ -63,8 +63,8 @@ struct allocator_traits {
 };
 
 // 标准分配器接口
-template <typename Tp, typename Alloc = default_alloc>  // 默认使用单线程版本
-class allocator {
+template <typename Tp, typename Alloc = alloc>  // 默认使用单线程版本
+class Allocator {
     using _Alloc = Alloc;  // 使用用户指定的分配器
 public:
     using size_type = size_t;
@@ -77,14 +77,14 @@ public:
 
     template <class Tp1>
     struct rebind {
-        using other = allocator<Tp1, Alloc>;  // 保持相同的分配器类型
+        using other = Allocator<Tp1, Alloc>;  // 保持相同的分配器类型
     };
 
-    allocator() noexcept {}
-    allocator(const allocator&) noexcept {}
+    Allocator() noexcept {}
+    Allocator(const Allocator&) noexcept {}
     template <class Tp1>
-    allocator(const allocator<Tp1, Alloc>&) noexcept {}
-    ~allocator() noexcept {}
+    Allocator(const Allocator<Tp1, Alloc>&) noexcept {}
+    ~Allocator() noexcept {}
 
     pointer address(reference x) const {
         return &x;
@@ -117,8 +117,8 @@ public:
 
 // allocator_traits 特化版本
 template <typename T>
-struct allocator_traits<allocator<T>> {
-    using allocator_type = allocator<T>;
+struct AllocatorTraits<Allocator<T>> {
+    using allocator_type = Allocator<T>;
     using value_type = T;
     using pointer = T*;
     using const_pointer = const T*;
@@ -131,7 +131,7 @@ struct allocator_traits<allocator<T>> {
     using propagate_on_container_swap = std::false_type;
 
     template <typename U>
-    using rebind_alloc = allocator<U>;
+    using rebind_alloc = Allocator<U>;
 
     static pointer allocate(allocator_type& a, size_type n) {
         return a.allocate(n);
@@ -166,7 +166,7 @@ struct allocator_traits<allocator<T>> {
 
 // void特化版本
 template <typename Alloc>
-class allocator<void, Alloc> {
+class Allocator<void, Alloc> {
 public:
     using size_type = size_t;
     using difference_type = ptrdiff_t;
@@ -176,18 +176,18 @@ public:
 
     template <typename Tp1>
     struct rebind {
-        using other = allocator<Tp1, Alloc>;
+        using other = Allocator<Tp1, Alloc>;
     };
 };
 
 // 分配器比较操作符
 template <typename T1, typename T2, typename Alloc>
-inline bool operator==(const allocator<T1, Alloc>&, const allocator<T2, Alloc>&) {
+inline bool operator==(const Allocator<T1, Alloc>&, const Allocator<T2, Alloc>&) {
     return true;
 }
 
 template <typename T1, typename T2, typename Alloc>
-inline bool operator!=(const allocator<T1, Alloc>&, const allocator<T2, Alloc>&) {
+inline bool operator!=(const Allocator<T1, Alloc>&, const Allocator<T2, Alloc>&) {
     return false;
 }
 

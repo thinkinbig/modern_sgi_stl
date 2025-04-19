@@ -7,12 +7,14 @@
 #include "mstl_vector.h"
 
 namespace mstl {
-template <typename Tp, typename Sequence = Deque<Tp>>
+
+template <class T, class Sequence = Deque<T>>
 class Queue {
-    using value_type = Sequence::value_type;
-    using size_type = Sequence::size_type;
-    using reference = Sequence::reference;
-    using const_reference = Sequence::const_reference;
+public:
+    using value_type = typename Sequence::value_type;
+    using size_type = typename Sequence::size_type;
+    using reference = typename Sequence::reference;
+    using const_reference = typename Sequence::const_reference;
 
     friend bool operator==(const Queue& x, const Queue& y) {
         return x.c == y.c;
@@ -59,23 +61,23 @@ protected:
     Sequence c;
 };
 
-template <typename Tp, typename Sequence>
-bool operator==(const Queue<Tp, Sequence>& x, const Queue<Tp, Sequence>& y) {
+template <class T, class Sequence = Deque<T>>
+bool operator==(const Queue<T, Sequence>& x, const Queue<T, Sequence>& y) {
     return x.c == y.c;
 }
 
-template <typename Tp, typename Sequence>
-bool operator<(const Queue<Tp, Sequence>& x, const Queue<Tp, Sequence>& y) {
+template <class T, class Sequence = Deque<T>>
+bool operator<(const Queue<T, Sequence>& x, const Queue<T, Sequence>& y) {
     return x.c < y.c;
 }
 
-template <typename T, typename Sequence = Vector<T>,
-          typename Compare = less<typename Sequence::value_type>>
+template <class T, class Sequence = Vector<T>, class Compare = Less<typename Sequence::value_type>>
 class PriorityQueue {
-    using value_type = Sequence::value_type;
-    using size_type = Sequence::size_type;
-    using reference = Sequence::reference;
-    using const_reference = Sequence::const_reference;
+public:
+    using value_type = typename Sequence::value_type;
+    using size_type = typename Sequence::size_type;
+    using reference = typename Sequence::reference;
+    using const_reference = typename Sequence::const_reference;
 
 protected:
     Sequence c;
@@ -85,13 +87,13 @@ public:
     PriorityQueue() : c() {}
     explicit PriorityQueue(const Compare& x) : c(), comp(x) {}
 
-    template <typename InputIterator>
+    template <class InputIterator>
     PriorityQueue(InputIterator first, InputIterator last, const Compare& x)
         : c(first, last), comp(x) {
         mstl::make_heap(c.begin(), c.end(), comp);
     }
 
-    template <typename InputIterator>
+    template <class InputIterator>
     PriorityQueue(InputIterator first, InputIterator last) : c(first, last) {
         mstl::make_heap(c.begin(), c.end(), comp);
     }
@@ -130,4 +132,5 @@ public:
 };
 
 }  // namespace mstl
-#endif
+
+#endif  // __MSGI_STL_INTERNAL_QUEUE_H

@@ -332,7 +332,7 @@ public:
 protected:
     Node* kNode;
     using node_allocator =
-        typename allocator_traits<SimpleAlloc<T, Alloc>>::template rebind_alloc<Node>;
+        typename AllocatorTraits<SimpleAlloc<T, Alloc>>::template rebind_alloc<Node>;
 
     void createNode() {
         kNode = getNode();

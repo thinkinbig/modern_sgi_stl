@@ -153,7 +153,7 @@ struct DequeIterator {
     }
 };
 
-template <typename Tp, typename Alloc = alloc>
+template <typename Tp, typename Alloc = Allocator<Tp>>
 class Deque {
 public:
     using value_type = Tp;
@@ -165,6 +165,8 @@ public:
 
     using iterator = DequeIterator<Tp, Tp&, Tp*>;
     using const_iterator = DequeIterator<Tp, const Tp&, const Tp*>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     using map_pointer = pointer*;
 
@@ -200,8 +202,97 @@ public:
         finish.cur = finish.first;
     }
 
+    explicit Deque(size_type n) : start(), finish(), map(nullptr), map_size(0) {
+        fill_initialize(n, value_type());
+    }
+
     Deque(size_type n, const value_type& value) : start(), finish(), map(nullptr), map_size(0) {
         fill_initialize(n, value);
+    }
+
+    // 移动构造函数
+    Deque(Deque&& other) noexcept : start(), finish(), map(nullptr), map_size(0) {
+        // 交换资源
+        start = other.start;
+        finish = other.finish;
+        map = other.map;
+        map_size = other.map_size;
+
+        // 清空源对象
+        other.start = iterator();
+        other.finish = iterator();
+        other.map = nullptr;
+        other.map_size = 0;
+    }
+
+    // 移动赋值运算符
+    Deque& operator=(Deque&& other) noexcept {
+        if (this != &other) {
+            // 释放当前资源
+            if (map) {
+                destroy(start, finish);
+                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                    deallocate_node(*node);
+                }
+                map_allocator::deallocate(map, map_size);
+            }
+
+            // 交换资源
+            start = other.start;
+            finish = other.finish;
+            map = other.map;
+            map_size = other.map_size;
+
+            // 清空源对象
+            other.start = iterator();
+            other.finish = iterator();
+            other.map = nullptr;
+            other.map_size = 0;
+        }
+        return *this;
+    }
+
+    // 拷贝构造函数
+    Deque(const Deque& other) : start(), finish(), map(nullptr), map_size(0) {
+        create_map_and_nodes(other.size());
+        try {
+            uninitialized_copy(other.start, other.finish, start);
+        } catch (...) {
+            destroy(start, finish);
+            for (map_pointer node = start.node; node <= finish.node; ++node) {
+                deallocate_node(*node);
+            }
+            map_allocator::deallocate(map, map_size);
+            throw;
+        }
+    }
+
+    // 拷贝赋值运算符
+    Deque& operator=(const Deque& other) {
+        if (this != &other) {
+            // 释放当前资源
+            if (map) {
+                destroy(start, finish);
+                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                    deallocate_node(*node);
+                }
+                map_allocator::deallocate(map, map_size);
+            }
+
+            // 分配新资源并复制元素
+            create_map_and_nodes(other.size());
+            try {
+                uninitialized_copy(other.start, other.finish, start);
+            } catch (...) {
+                destroy(start, finish);
+                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                    deallocate_node(*node);
+                }
+                map_allocator::deallocate(map, map_size);
+                throw;
+            }
+        }
+        return *this;
     }
 
     // 析构函数
@@ -603,6 +694,23 @@ public:
             deallocate_node(*(finish.node + 1));
             throw;
         }
+    }
+
+    // 反向迭代器相关函数
+    reverse_iterator rbegin() {
+        return reverse_iterator(end());
+    }
+
+    const_reverse_iterator rbegin() const {
+        return const_reverse_iterator(end());
+    }
+
+    reverse_iterator rend() {
+        return reverse_iterator(begin());
+    }
+
+    const_reverse_iterator rend() const {
+        return const_reverse_iterator(begin());
     }
 };
 }  // namespace mstl

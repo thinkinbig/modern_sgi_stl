@@ -119,7 +119,7 @@ void priority_queue_test() {
     assert(pq1.top() == 3);
 
     // 测试自定义比较函数（最小堆）
-    PriorityQueue<int, Vector<int>, mstl::greater<int>> pq2;
+    PriorityQueue<int, Vector<int>, mstl::Greater<int>> pq2;
     pq2.push(3);
     pq2.push(1);
     pq2.push(4);
@@ -132,7 +132,7 @@ void priority_queue_test() {
     assert(pq3.top() == 9);
 
     // 测试使用迭代器范围和比较函数构造
-    PriorityQueue<int, Vector<int>, mstl::greater<int>> pq4(arr, arr + 5);
+    PriorityQueue<int, Vector<int>, mstl::Greater<int>> pq4(arr, arr + 5);
     assert(pq4.size() == 5);
     assert(pq4.top() == 1);
 

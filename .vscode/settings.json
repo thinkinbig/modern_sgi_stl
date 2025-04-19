@@ -17,6 +17,7 @@
         "type_traits": "cpp",
         "chrono": "cpp",
         "format": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "cassert": "cpp"
     }
 }

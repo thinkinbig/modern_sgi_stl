@@ -5,7 +5,7 @@ namespace mstl {
 
 // 基础函数对象
 template <typename T>
-struct less {
+struct Less {
     using first_argument_type = T;
     using second_argument_type = T;
     using result_type = bool;
@@ -16,7 +16,7 @@ struct less {
 };
 
 template <typename T>
-struct greater {
+struct Greater {
     using first_argument_type = T;
     using second_argument_type = T;
     using result_type = bool;

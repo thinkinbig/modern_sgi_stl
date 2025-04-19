@@ -1,16 +1,17 @@
 #ifndef __MSGI_STL_INTERNAL_STACK_H
 #define __MSGI_STL_INTERNAL_STACK_H
 
-#include <stack>
 #include "mstl_deque.h"
 
 namespace mstl {
-template <typename Tp, typename Sequence = Deque<Tp>>
+
+template <class T, class Sequence = Deque<T>>
 class Stack {
-    using value_type = Sequence::value_type;
-    using size_type = Sequence::size_type;
-    using reference = Sequence::reference;
-    using const_reference = Sequence::const_reference;
+public:
+    using value_type = typename Sequence::value_type;
+    using size_type = typename Sequence::size_type;
+    using reference = typename Sequence::reference;
+    using const_reference = typename Sequence::const_reference;
 
     friend bool operator==(const Stack& x, const Stack& y) {
         return x.c == y.c;

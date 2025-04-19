@@ -22,6 +22,10 @@ public:
     using MallocHandler = void (*)();
     using MallocFunction = void* (*)(size_t);
     using ReallocFunction = void* (*)(void*, size_t);
+    using pointer = void*;
+    using const_pointer = const void*;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
 
     template <typename T>
     struct rebind {
@@ -141,7 +145,8 @@ private:
         };
     };
 
-    static std::array<Obj* volatile, kNumFreeLists> freeList;
+    static ::std::array<typename DefaultAllocTemplate<threads, inst>::Obj* volatile, kNumFreeLists>
+        freeList;
 
     static size_t freeListIndex(size_t bytes) {
         return (((bytes) + kAlignment - 1) / kAlignment - 1);
@@ -223,47 +228,41 @@ public:
 
 // 静态成员定义
 template <bool threads, int inst>
-std::mutex DefaultAllocTemplate<threads, inst>::kMutex;
+::std::mutex DefaultAllocTemplate<threads, inst>::kMutex;
 
 // 定义分配器类型
 using default_alloc = DefaultAllocTemplate<false, 0>;     // 单线程版本
 using thread_safe_alloc = DefaultAllocTemplate<true, 0>;  // 多线程版本
 
 // 简单的分配器封装
-template <class Tp, class Alloc>
+template <typename Tp, typename Alloc>
 class SimpleAlloc {
 public:
     using value_type = Tp;
     using pointer = Tp*;
     using const_pointer = const Tp*;
+    using reference = Tp&;
+    using const_reference = const Tp&;
     using size_type = size_t;
     using difference_type = ptrdiff_t;
 
-    static Tp* allocate(size_t n) {
-        return 0 == n ? 0 : static_cast<Tp*>(Alloc::allocate(n * sizeof(Tp)));
-    }
-    static Tp* allocate(void) {
-        return static_cast<Tp*>(Alloc::allocate(sizeof(Tp)));
-    }
-    static void deallocate(Tp* p, size_t n) {
-        if (0 != n)
-            Alloc::deallocate(p, n * sizeof(Tp));
-    }
-    static void deallocate(Tp* p) {
-        Alloc::deallocate(p, sizeof(Tp));
-    }
-
-    template <class Tp1>
+    template <typename U>
     struct rebind {
-        using other = SimpleAlloc<Tp1, Alloc>;
+        using other = SimpleAlloc<U, Alloc>;
     };
-};
 
-// 静态断言，确保simple_alloc满足SimpleAllocator合约
-template <class Tp, class Alloc>
-inline constexpr bool checkSimpleAlloc = SimpleAllocator<SimpleAlloc<Tp, Alloc>, Tp>;
-static_assert(checkSimpleAlloc<int, default_alloc>,
-              "simple_alloc must satisfy SimpleAllocator concept");
+    static Tp* allocate(size_t n = 1) {
+        Alloc a;
+        return 0 == n ? 0 : reinterpret_cast<Tp*>(a.allocate(n * sizeof(Tp)));
+    }
+
+    static void deallocate(Tp* p, size_t n = 1) {
+        if (p != 0) {
+            Alloc a;
+            a.deallocate(reinterpret_cast<typename Alloc::pointer>(p), n * sizeof(Tp));
+        }
+    }
+};
 
 template <bool threads, int inst>
 char* DefaultAllocTemplate<threads, inst>::startFree = nullptr;
@@ -275,7 +274,7 @@ template <bool threads, int inst>
 size_t DefaultAllocTemplate<threads, inst>::heapSize = 0;
 
 template <bool threads, int inst>
-std::array<typename DefaultAllocTemplate<threads, inst>::Obj* volatile, kNumFreeLists>
+::std::array<typename DefaultAllocTemplate<threads, inst>::Obj* volatile, kNumFreeLists>
     DefaultAllocTemplate<threads, inst>::freeList = {0};  // 定义
 
 template <bool threads, int inst>
