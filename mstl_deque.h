@@ -166,8 +166,8 @@ public:
 
     using iterator = DequeIterator<Tp, Tp&, Tp*>;
     using const_iterator = DequeIterator<Tp, const Tp&, const Tp*>;
-    using reverse_iterator = reverse_iterator<iterator>;
-    using const_reverse_iterator = reverse_iterator<const_iterator>;
+    using reverse_iterator = mstl::reverse_iterator<iterator>;
+    using const_reverse_iterator = mstl::reverse_iterator<const_iterator>;
 
     using map_pointer = pointer*;
 
