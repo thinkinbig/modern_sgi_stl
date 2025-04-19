@@ -13,13 +13,17 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        compiler: [gcc, clang]
+        compiler: [gcc, clang, msvc]
         cpp_std: [20]
         exclude:
           - os: windows-latest
             compiler: clang
+          - os: windows-latest
+            compiler: gcc
           - os: macos-latest
             compiler: gcc
+          - os: macos-latest
+            compiler: msvc
 
     steps:
     - uses: actions/checkout@v3
@@ -69,11 +73,13 @@ jobs:
     - name: Configure CMake (Windows)
       if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
+      shell: cmd
       run: |
-        cmake .. \
-          -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_FLAGS="/W4 /O2"
+        cmake .. ^
+          -DCMAKE_CXX_STANDARD=%matrix.cpp_std% ^
+          -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_CXX_FLAGS="/W4 /O2" ^
+          -DCMAKE_EXE_LINKER_FLAGS="/SUBSYSTEM:CONSOLE"
 
     - name: Build (Unix-like)
       if: matrix.os != 'windows-latest'
@@ -83,6 +89,7 @@ jobs:
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
+      shell: cmd
       run: cmake --build . --config Release --parallel
 
     - name: Run tests (Unix-like)
@@ -93,4 +100,5 @@ jobs:
     - name: Run tests (Windows)
       if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
+      shell: cmd
       run: ctest --output-on-failure --parallel 
