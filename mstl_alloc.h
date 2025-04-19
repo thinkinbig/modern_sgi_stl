@@ -202,7 +202,7 @@ public:
             std::lock_guard<std::mutex> lock(kMutex);
         }
 
-        myFreeList = std::begin(freeList) + freeListIndex(n);
+        myFreeList = &freeList[freeListIndex(n)];
         q->freeListLink = *myFreeList;
         *myFreeList = q;
     }
