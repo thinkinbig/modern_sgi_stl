@@ -112,7 +112,7 @@ template <typename _RandomAccessIterator, typename _Compare>
 inline void pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp) {
     using _DistanceType = typename iterator_traits<_RandomAccessIterator>::difference_type;
     if (__last - __first > 1) {
-        std::iter_swap(__first, __last - 1);
+        std::ranges::iter_swap(__first, __last - 1);
         __mstl__adjust_heap(__first, _DistanceType(0), _DistanceType(__last - __first - 1),
                             *__first, __comp);
     }
@@ -122,14 +122,14 @@ inline void pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last
 template <typename _RandomAccessIterator>
 inline void pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last) {
     using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
-    pop_heap(__first, __last, std::less<_ValueType>());
+    mstl::pop_heap(__first, __last, std::less<_ValueType>());
 }
 
 // 对外接口：堆排序（带比较函数版本）
 template <typename _RandomAccessIterator, typename _Compare>
 void sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp) {
     while (__last - __first > 1) {
-        pop_heap(__first, __last--, __comp);
+        mstl::pop_heap(__first, __last--, __comp);
     }
 }
 
@@ -137,7 +137,7 @@ void sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Com
 template <typename _RandomAccessIterator>
 void sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last) {
     using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
-    sort_heap(__first, __last, std::less<_ValueType>());
+    mstl::sort_heap(__first, __last, std::less<_ValueType>());
 }
 
 }  // namespace mstl

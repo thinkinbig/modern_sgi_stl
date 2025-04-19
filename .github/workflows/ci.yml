@@ -14,7 +14,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         compiler: [gcc, clang]
-        cpp_std: [17]
+        cpp_std: [20]
         exclude:
           - os: windows-latest
             compiler: clang
@@ -28,13 +28,17 @@ jobs:
       if: matrix.compiler == 'gcc' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y g++ cmake
+        sudo apt-get install -y g++-11 cmake
+        echo "CC=gcc-11" >> $GITHUB_ENV
+        echo "CXX=g++-11" >> $GITHUB_ENV
 
     - name: Set up C++ compiler (Ubuntu Clang)
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake
+        sudo apt-get install -y clang-14 cmake
+        echo "CC=clang-14" >> $GITHUB_ENV
+        echo "CXX=clang++-14" >> $GITHUB_ENV
 
     - name: Set up C++ compiler (Windows)
       if: matrix.os == 'windows-latest'
@@ -42,33 +46,59 @@ jobs:
       with:
         update: true
         install: >-
-          base-devel
-          mingw-w64-x86_64-toolchain
-          cmake
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          make
 
-    - name: Set up C++ compiler (macOS Clang)
+    - name: Set up C++ compiler (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install llvm cmake
+        brew install llvm@16
+        echo "CC=$(brew --prefix llvm@16)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm@16)/bin/clang++" >> $GITHUB_ENV
+        echo "$(brew --prefix llvm@16)/bin" >> $GITHUB_PATH
 
     - name: Create build directory
-      run: |
-        mkdir -p build
-        cd build
+      run: mkdir -p build
 
-    - name: Configure CMake
+    - name: Configure CMake (Unix-like)
+      if: matrix.os != 'windows-latest'
       working-directory: ${{ github.workspace }}/build
       run: |
-        cmake ${{ github.workspace }} \
+        cmake .. \
           -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
-          -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_FLAGS="-O3"
+          -DCMAKE_CXX_FLAGS="-Wall -Wextra -O3"
 
-    - name: Build
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      working-directory: ${{ github.workspace }}/build
+      shell: msys2 {0}
+      run: |
+        cmake .. \
+          -G "MinGW Makefiles" \
+          -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_FLAGS="-Wall -Wextra -O3"
+
+    - name: Build (Unix-like)
+      if: matrix.os != 'windows-latest'
       working-directory: ${{ github.workspace }}/build
       run: cmake --build . --config Release --parallel
 
-    - name: Run tests
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
+      shell: msys2 {0}
+      run: cmake --build . --config Release --parallel
+
+    - name: Run tests (Unix-like)
+      if: matrix.os != 'windows-latest'
+      working-directory: ${{ github.workspace }}/build
+      run: ctest --output-on-failure --parallel
+
+    - name: Run tests (Windows)
+      if: matrix.os == 'windows-latest'
+      working-directory: ${{ github.workspace }}/build
+      shell: msys2 {0}
       run: ctest --output-on-failure --parallel 
