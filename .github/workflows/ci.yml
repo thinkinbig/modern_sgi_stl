@@ -51,17 +51,22 @@ jobs:
         brew install llvm cmake
 
     - name: Create build directory
-      run: mkdir build && cd build
+      run: |
+        mkdir -p build
+        cd build
 
     - name: Configure CMake
+      working-directory: ${{ github.workspace }}/build
       run: |
-        cmake .. \
+        cmake ${{ github.workspace }} \
           -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} \
           -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
+      working-directory: ${{ github.workspace }}/build
       run: cmake --build . --config Release
 
     - name: Run tests
+      working-directory: ${{ github.workspace }}/build
       run: ctest --output-on-failure 
