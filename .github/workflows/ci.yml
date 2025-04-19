@@ -23,31 +23,32 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up CMake
-      uses: actions/setup-cmake@v2
-
-    - name: Set up C++ compiler
+    - name: Set up C++ compiler (Ubuntu GCC)
       if: matrix.compiler == 'gcc' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y g++-${{ matrix.cpp_std }}
+        sudo apt-get install -y g++-${{ matrix.cpp_std }} cmake
 
-    - name: Set up C++ compiler
-      if: matrix.compiler == 'gcc' && matrix.os == 'windows-latest'
-      run: |
-        choco install mingw -y
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-    - name: Set up C++ compiler
+    - name: Set up C++ compiler (Ubuntu Clang)
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang
+        sudo apt-get install -y clang cmake
 
-    - name: Set up C++ compiler
-      if: matrix.compiler == 'clang' && matrix.os == 'macos-latest'
+    - name: Set up C++ compiler (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          base-devel
+          mingw-w64-x86_64-toolchain
+          cmake
+
+    - name: Set up C++ compiler (macOS Clang)
+      if: matrix.os == 'macos-latest'
       run: |
-        brew install llvm
+        brew install llvm cmake
 
     - name: Create build directory
       run: mkdir build && cd build
