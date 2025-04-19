@@ -42,13 +42,9 @@ jobs:
 
     - name: Set up C++ compiler (Windows)
       if: matrix.os == 'windows-latest'
-      uses: msys2/setup-msys2@v2
+      uses: ilammy/msvc-dev-cmd@v1
       with:
-        update: true
-        install: >-
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-cmake
-          make
+        arch: x64
 
     - name: Set up C++ compiler (macOS)
       if: matrix.os == 'macos-latest'
@@ -73,13 +69,11 @@ jobs:
     - name: Configure CMake (Windows)
       if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
-      shell: msys2 {0}
       run: |
         cmake .. \
-          -G "MinGW Makefiles" \
           -DCMAKE_CXX_STANDARD=${{ matrix.cpp_std }} \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_FLAGS="-Wall -Wextra -O3"
+          -DCMAKE_CXX_FLAGS="/W4 /O2"
 
     - name: Build (Unix-like)
       if: matrix.os != 'windows-latest'
@@ -89,7 +83,6 @@ jobs:
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
-      shell: msys2 {0}
       run: cmake --build . --config Release --parallel
 
     - name: Run tests (Unix-like)
@@ -100,5 +93,4 @@ jobs:
     - name: Run tests (Windows)
       if: matrix.os == 'windows-latest'
       working-directory: ${{ github.workspace }}/build
-      shell: msys2 {0}
       run: ctest --output-on-failure --parallel 
