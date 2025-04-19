@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置编译器
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20 /EHsc /W4")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall -Wextra")
 endif()
 
 # 查找clang-format
@@ -94,19 +94,35 @@ add_executable(mstl_heap_test mstl_heap_test.cpp)
 add_executable(mstl_slist_test mstl_slist_test.cpp)
 
 # 为所有测试添加调试信息
-set_target_properties(
-    mstl_alloc_test
-    mstl_construct_test
-    mstl_uninitialized_test
-    mstl_iterator_test
-    mstl_vector_test
-    mstl_list_test
-    mstl_deque_test
-    mstl_heap_test
-    mstl_slist_test
-    PROPERTIES
-    COMPILE_FLAGS "-g -O1"
-)
+if(MSVC)
+    set_target_properties(
+        mstl_alloc_test
+        mstl_construct_test
+        mstl_uninitialized_test
+        mstl_iterator_test
+        mstl_vector_test
+        mstl_list_test
+        mstl_deque_test
+        mstl_heap_test
+        mstl_slist_test
+        PROPERTIES
+        COMPILE_FLAGS "/O1"
+    )
+else()
+    set_target_properties(
+        mstl_alloc_test
+        mstl_construct_test
+        mstl_uninitialized_test
+        mstl_iterator_test
+        mstl_vector_test
+        mstl_list_test
+        mstl_deque_test
+        mstl_heap_test
+        mstl_slist_test
+        PROPERTIES
+        COMPILE_FLAGS "-g -O1"
+    )
+endif()
 
 if(NOT WIN32)
     set_target_properties(
