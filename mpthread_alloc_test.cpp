@@ -166,43 +166,39 @@ void test_multi_thread() {
 }
 
 void benchmark() {
-    std::cout << "\n===== 性能测试 =====" << std::endl;
+    const int num_threads = 4;
+    const int allocs_per_thread = 1000000;
+    const int num_runs = 5;
 
-    // 测试参数
-    const int REPEAT_TESTS = 5;            // 重复测试次数
-    const int ALLOCS_PER_THREAD = 100000;  // 每个线程的分配次数
+    std::cout << "开始性能测试..." << std::endl;
+    std::cout << "线程数: " << num_threads << std::endl;
+    std::cout << "每个线程分配次数: " << allocs_per_thread << std::endl;
+    std::cout << "运行次数: " << num_runs << std::endl;
 
-    std::cout << std::fixed << std::setprecision(2);
-    std::cout << "每个线程分配 " << ALLOCS_PER_THREAD << " 次，每种配置重复 " << REPEAT_TESTS
-              << " 次测试\n"
-              << std::endl;
+    double total_std_time = 0.0;
+    double total_custom_time = 0.0;
 
-    std::cout << "线程数\t标准分配器(μs)\t自定义分配器(μs)\t加速比" << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
+    for (int i = 0; i < num_runs; ++i) {
+        std::cout << "\n运行 " << i + 1 << "/" << num_runs << ":" << std::endl;
 
-    // 测试不同线程数的性能
-    for (int num_threads : {1, 2, 4, 8}) {
-        double std_total = 0;
-        double custom_total = 0;
+        double std_time = run_multi_thread_test(num_threads, allocs_per_thread, false);
+        double custom_time = run_multi_thread_test(num_threads, allocs_per_thread, true);
 
-        // 重复测试多次取平均值
-        for (int i = 0; i < REPEAT_TESTS; ++i) {
-            double std_time = run_multi_thread_test(num_threads, ALLOCS_PER_THREAD, false);
-            double custom_time = run_multi_thread_test(num_threads, ALLOCS_PER_THREAD, true);
+        total_std_time += std_time;
+        total_custom_time += custom_time;
 
-            std_total += std_time;
-            custom_total += custom_time;
-        }
-
-        // 计算平均时间
-        double std_avg = std_total / REPEAT_TESTS;
-        double custom_avg = custom_total / REPEAT_TESTS;
-        double speedup = std_avg / custom_avg;
-
-        // 输出结果
-        std::cout << num_threads << "\t" << std_avg << "\t\t" << custom_avg << "\t\t" << speedup
-                  << "x" << std::endl;
+        std::cout << "标准分配器时间: " << std_time << " 秒" << std::endl;
+        std::cout << "自定义分配器时间: " << custom_time << " 秒" << std::endl;
+        std::cout << "性能提升: " << (std_time - custom_time) / std_time * 100 << "%" << std::endl;
     }
+
+    double avg_std_time = total_std_time / num_runs;
+    double avg_custom_time = total_custom_time / num_runs;
+
+    std::cout << "\n平均性能:" << std::endl;
+    std::cout << "标准分配器: " << avg_std_time << " 秒" << std::endl;
+    std::cout << "自定义分配器: " << avg_custom_time << " 秒" << std::endl;
+    std::cout << "平均性能提升: " << (avg_std_time - avg_custom_time) / avg_std_time * 100 << "%" << std::endl;
 }
 
 // 测试内存泄漏检测
