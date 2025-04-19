@@ -24,6 +24,8 @@ jobs:
             compiler: gcc
           - os: macos-latest
             compiler: msvc
+          - os: ubuntu-latest
+            compiler: msvc
 
     steps:
     - uses: actions/checkout@v3
