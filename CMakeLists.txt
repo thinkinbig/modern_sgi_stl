@@ -4,8 +4,13 @@ project(ModernSGI_STL VERSION 1.0)
 # 设置C++标准
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+
+# 设置编译器
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+endif()
 
 # 查找clang-format
 find_program(CLANG_FORMAT "clang-format")
@@ -39,7 +44,10 @@ if(CLANG_FORMAT)
 endif()
 
 # 设置调试选项
-set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra")
 
 # 添加Address Sanitizer支持
@@ -94,6 +102,7 @@ set_target_properties(
     mstl_list_test
     mstl_deque_test
     mstl_heap_test
+    mstl_slist_test
     PROPERTIES
     COMPILE_FLAGS "-g -O1"
 )
@@ -122,6 +131,7 @@ add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_sta
 add_test(NAME mstl_queue_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_queue_test)
 add_test(NAME mstl_heap_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_heap_test)
 add_test(NAME mstl_slist_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_slist_test)
+
 # 设置测试属性
 set_tests_properties(
     mstl_alloc_test
@@ -147,6 +157,8 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
 
 # 安装规则
 install(TARGETS mstl_alloc_test mstl_construct_test mstl_uninitialized_test
