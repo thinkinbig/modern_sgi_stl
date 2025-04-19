@@ -28,24 +28,17 @@ jobs:
       if: matrix.compiler == 'gcc' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt-get install -y g++-19 cmake
-        echo "CC=gcc-19" >> $GITHUB_ENV
-        echo "CXX=g++-19" >> $GITHUB_ENV
+        sudo apt-get install -y g++ cmake
+        echo "CC=gcc" >> $GITHUB_ENV
+        echo "CXX=g++" >> $GITHUB_ENV
 
     - name: Set up C++ compiler (Ubuntu Clang)
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y lsb-release wget software-properties-common gnupg
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        sudo ./llvm.sh 19
-        sudo apt-get install -y clang-19 cmake
-        echo "CC=clang-19" >> $GITHUB_ENV
-        echo "CXX=clang++-19" >> $GITHUB_ENV
+        sudo apt-get install -y clang cmake
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
 
     - name: Set up C++ compiler (Windows)
       if: matrix.os == 'windows-latest'
@@ -60,10 +53,10 @@ jobs:
     - name: Set up C++ compiler (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install llvm@19
-        echo "CC=$(brew --prefix llvm@19)/bin/clang" >> $GITHUB_ENV
-        echo "CXX=$(brew --prefix llvm@19)/bin/clang++" >> $GITHUB_ENV
-        echo "$(brew --prefix llvm@19)/bin" >> $GITHUB_PATH
+        brew install llvm
+        echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
+        echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
     - name: Create build directory
       run: mkdir -p build
