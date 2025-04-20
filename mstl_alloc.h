@@ -145,8 +145,7 @@ private:
         };
     };
 
-    static ::std::array<typename DefaultAllocTemplate<threads, inst>::Obj* volatile, kNumFreeLists>
-        freeList;
+    static typename DefaultAllocTemplate<threads, inst>::Obj* volatile freeList[kNumFreeLists];
 
     static size_t freeListIndex(size_t bytes) {
         return (((bytes) + kAlignment - 1) / kAlignment - 1);
@@ -173,7 +172,7 @@ public:
         if (n > kMaxBytes)
             return malloc_alloc::allocate(n);
 
-        myFreeList = std::begin(freeList) + freeListIndex(n);
+        myFreeList = freeList + freeListIndex(n);
 
         if constexpr (threads) {
             std::lock_guard<std::mutex> lock(kMutex);
@@ -274,8 +273,8 @@ template <bool threads, int inst>
 size_t DefaultAllocTemplate<threads, inst>::heapSize = 0;
 
 template <bool threads, int inst>
-::std::array<typename DefaultAllocTemplate<threads, inst>::Obj* volatile, kNumFreeLists>
-    DefaultAllocTemplate<threads, inst>::freeList = {0};  // 定义
+typename DefaultAllocTemplate<threads, inst>::Obj* volatile 
+    DefaultAllocTemplate<threads, inst>::freeList[kNumFreeLists] = {0};  // 定义
 
 template <bool threads, int inst>
 void* DefaultAllocTemplate<threads, inst>::refill(size_t n) {
