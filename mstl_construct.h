@@ -61,6 +61,20 @@ inline void destroy(char*) {}
 // 单个对象wchar_t版本
 inline void destroy(wchar_t*) {}
 
+template <typename InputIterator, typename ForwardIterator>
+ForwardIterator uninitialized_move(InputIterator first, InputIterator last, ForwardIterator result) {
+    ForwardIterator cur = result;
+    try {
+        for (; first != last; ++first, ++cur) {
+            construct(&*cur, std::move(*first));
+        }
+        return cur;
+    } catch (...) {
+        destroy(result, cur);
+        throw;
+    }
+}
+
 }  // namespace mstl
 
 #endif  // __MSGI_STL_INTERNAL_CONSTRUCT_H

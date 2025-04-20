@@ -7,11 +7,11 @@
 #include <memory>
 #include <thread>
 #include <vector>
-
+#include "mstl_vector.h"
 // 定义一个用于跟踪内存分配的简单类
 class LeakTracker {
 private:
-    std::vector<std::pair<void*, size_t>> allocated_memory;
+    mstl::Vector<std::pair<void*, size_t>, mstl::StlPthreadAllocator<std::pair<void*, size_t>>> allocated_memory;
 
 public:
     void record_allocation(void* ptr, size_t size) {
@@ -79,7 +79,7 @@ void test_stl_container() {
     std::cout << "Testing STL container integration..." << std::endl;
 
     // STL容器测试
-    std::vector<int, mstl::StlPthreadAllocator<int>> vec;
+    mstl::Vector<int, mstl::StlPthreadAllocator<int>> vec;
     for (int i = 0; i < 1000; ++i) {
         vec.push_back(i);
     }
@@ -110,7 +110,7 @@ void test_smart_pointer() {
 // 运行多线程分配测试，返回耗时（微秒）
 double run_multi_thread_test(int num_threads, int allocs_per_thread, bool use_custom_allocator) {
     auto thread_func_custom = [allocs_per_thread]() {
-        std::vector<void*> ptrs;
+        mstl::Vector<void*> ptrs;
         ptrs.reserve(allocs_per_thread);
         for (int i = 0; i < allocs_per_thread; ++i) {
             void* p = mstl::PthreadAllocatorTemplate<>::allocate(64);
@@ -122,7 +122,7 @@ double run_multi_thread_test(int num_threads, int allocs_per_thread, bool use_cu
     };
 
     auto thread_func_std = [allocs_per_thread]() {
-        std::vector<void*> ptrs;
+        mstl::Vector<void*> ptrs;
         ptrs.reserve(allocs_per_thread);
         for (int i = 0; i < allocs_per_thread; ++i) {
             void* p = ::operator new(64);
@@ -135,12 +135,12 @@ double run_multi_thread_test(int num_threads, int allocs_per_thread, bool use_cu
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::vector<std::thread> threads;
+    mstl::Vector<std::thread> threads;
     for (int i = 0; i < num_threads; ++i) {
         if (use_custom_allocator) {
-            threads.emplace_back(thread_func_custom);
+            threads.push_back(std::thread(thread_func_custom));
         } else {
-            threads.emplace_back(thread_func_std);
+            threads.push_back(std::thread(thread_func_std));
         }
     }
 

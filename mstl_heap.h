@@ -74,8 +74,8 @@ void __mstl__make_heap(_RandomAccessIterator __first, _RandomAccessIterator __la
 template <typename _RandomAccessIterator, typename _Compare>
 inline void make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last,
                       _Compare __comp) {
-    using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
-    using _DistanceType = typename iterator_traits<_RandomAccessIterator>::difference_type;
+    using _ValueType = typename IteratorTraits<_RandomAccessIterator>::ValueType;
+    using _DistanceType = typename IteratorTraits<_RandomAccessIterator>::DifferenceType;
     __mstl__make_heap(__first, __last, static_cast<_ValueType*>(nullptr),
                       static_cast<_DistanceType*>(nullptr), __comp);
 }
@@ -83,8 +83,8 @@ inline void make_heap(_RandomAccessIterator __first, _RandomAccessIterator __las
 // 对外接口：构建堆（默认版本）
 template <typename _RandomAccessIterator>
 inline void make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last) {
-    using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
-    using _DistanceType = typename iterator_traits<_RandomAccessIterator>::difference_type;
+    using _ValueType = typename IteratorTraits<_RandomAccessIterator>::ValueType;
+    using _DistanceType = typename IteratorTraits<_RandomAccessIterator>::DifferenceType;
     __mstl__make_heap(__first, __last, static_cast<_ValueType*>(nullptr),
                       static_cast<_DistanceType*>(nullptr), std::less<_ValueType>());
 }
@@ -93,7 +93,7 @@ inline void make_heap(_RandomAccessIterator __first, _RandomAccessIterator __las
 template <typename _RandomAccessIterator, typename _Compare>
 inline void push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last,
                       _Compare __comp) {
-    using _DistanceType = typename iterator_traits<_RandomAccessIterator>::difference_type;
+    using _DistanceType = typename IteratorTraits<_RandomAccessIterator>::DifferenceType;
     __mstl__push_heap(__first, _DistanceType(__last - __first - 1), _DistanceType(0), *(__last - 1),
                       __comp);
 }
@@ -101,8 +101,8 @@ inline void push_heap(_RandomAccessIterator __first, _RandomAccessIterator __las
 // 对外接口：将新元素加入堆（默认版本）
 template <typename _RandomAccessIterator>
 inline void push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last) {
-    using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
-    using _DistanceType = typename iterator_traits<_RandomAccessIterator>::difference_type;
+    using _ValueType = typename IteratorTraits<_RandomAccessIterator>::ValueType;
+    using _DistanceType = typename IteratorTraits<_RandomAccessIterator>::DifferenceType;
     __mstl__push_heap(__first, _DistanceType(__last - __first - 1), _DistanceType(0), *(__last - 1),
                       std::less<_ValueType>());
 }
@@ -110,7 +110,7 @@ inline void push_heap(_RandomAccessIterator __first, _RandomAccessIterator __las
 // 对外接口：弹出堆顶元素（带比较函数版本）
 template <typename _RandomAccessIterator, typename _Compare>
 inline void pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp) {
-    using _DistanceType = typename iterator_traits<_RandomAccessIterator>::difference_type;
+    using _DistanceType = typename IteratorTraits<_RandomAccessIterator>::DifferenceType;
     if (__last - __first > 1) {
         std::ranges::iter_swap(__first, __last - 1);
         __mstl__adjust_heap(__first, _DistanceType(0), _DistanceType(__last - __first - 1),
@@ -121,7 +121,7 @@ inline void pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last
 // 对外接口：弹出堆顶元素（默认版本）
 template <typename _RandomAccessIterator>
 inline void pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last) {
-    using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
+    using _ValueType = typename IteratorTraits<_RandomAccessIterator>::ValueType;
     mstl::pop_heap(__first, __last, std::less<_ValueType>());
 }
 
@@ -136,7 +136,7 @@ void sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Com
 // 对外接口：堆排序（默认版本）
 template <typename _RandomAccessIterator>
 void sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last) {
-    using _ValueType = typename iterator_traits<_RandomAccessIterator>::value_type;
+    using _ValueType = typename IteratorTraits<_RandomAccessIterator>::ValueType;
     mstl::sort_heap(__first, __last, std::less<_ValueType>());
 }
 

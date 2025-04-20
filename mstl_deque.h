@@ -19,29 +19,29 @@ size_t __deque_buf_size(size_t sz) {
 
 template <typename Tp, typename Ref, typename Ptr>
 struct DequeIterator {
-    using iterator_category = BidirectionalIteratorTag;
-    using value_type = Tp;
-    using difference_type = ptrdiff_t;
-    using pointer = Ptr;
-    using reference = Ref;
+    using IteratorCategory = BidirectionalIteratorTag;
+    using ValueType = Tp;
+    using DifferenceType = ptrdiff_t;
+    using Pointer = Ptr;
+    using Reference = Ref;
 
-    using map_pointer = Tp**;
-    using self = DequeIterator<Tp, Ref, Ptr>;
-    using iterator = DequeIterator<Tp, Tp&, Tp*>;
-    using const_iterator = DequeIterator<Tp, const Tp&, const Tp*>;
+    using MapPointer = Tp**;
+    using Self = DequeIterator<Tp, Ref, Ptr>;
+    using Iterator = DequeIterator<Tp, Tp&, Tp*>;
+    using ConstIterator = DequeIterator<Tp, const Tp&, const Tp*>;
 
     // 迭代器所含的5个指针
     Tp* cur;
     Tp* first;
     Tp* last;
-    map_pointer node;
+    MapPointer node;
 
     // 构造函数
-    DequeIterator(Tp* x, map_pointer y) : cur(x), first(*y), last(*y + buffer_size()), node(y) {}
+    DequeIterator(Tp* x, MapPointer y) : cur(x), first(*y), last(*y + buffer_size()), node(y) {}
     DequeIterator() : cur(0), first(0), last(0), node(0) {}
-    DequeIterator(const self& x) : cur(x.cur), first(x.first), last(x.last), node(x.node) {}
+    DequeIterator(const Self& x) : cur(x.cur), first(x.first), last(x.last), node(x.node) {}
 
-    self& operator=(const self& x) {
+    Self& operator=(const Self& x) {
         if (this != &x) {
             cur = x.cur;
             first = x.first;
@@ -55,18 +55,18 @@ struct DequeIterator {
         return __deque_buf_size(sizeof(Tp));
     }
 
-    reference operator*() const {
+    Reference operator*() const {
         return *cur;
     }
-    pointer operator->() const {
+    Pointer operator->() const {
         return cur;
     }
 
-    difference_type operator-(const self& x) const {
+    DifferenceType operator-(const Self& x) const {
         return buffer_size() * (node - x.node - 1) + (x.last - x.cur) + (cur - first);
     }
 
-    self& operator++() {
+    Self& operator++() {
         ++cur;
         if (cur == last) {
             set_node(node + 1);
@@ -75,13 +75,13 @@ struct DequeIterator {
         return *this;
     }
 
-    self operator++(int) {
-        self tmp = *this;
+    Self operator++(int) {
+        Self tmp = *this;
         ++(*this);
         return tmp;
     }
 
-    self& operator--() {
+    Self& operator--() {
         if (cur == first) {
             set_node(node - 1);
             cur = last;
@@ -90,89 +90,89 @@ struct DequeIterator {
         return *this;
     }
 
-    self operator--(int) {
-        self tmp = *this;
+    Self operator--(int) {
+        Self tmp = *this;
         --*this;
         return tmp;
     }
 
-    self& operator+=(difference_type n) {
-        difference_type offset = n + (cur - first);
-        if (offset >= 0 && offset < difference_type(buffer_size())) {
+    Self& operator+=(DifferenceType n) {
+        DifferenceType offset = n + (cur - first);
+        if (offset >= 0 && offset < DifferenceType(buffer_size())) {
             cur += n;
         } else {
-            difference_type node_offset = offset > 0
-                                              ? offset / difference_type(buffer_size())
-                                              : -difference_type(-offset - 1) / buffer_size();
+            DifferenceType node_offset = offset > 0
+                                              ? offset / DifferenceType(buffer_size())
+                                              : -DifferenceType(-offset - 1) / buffer_size();
             set_node(node + node_offset);
-            cur = first + (offset - node_offset * difference_type(buffer_size()));
+            cur = first + (offset - node_offset * DifferenceType(buffer_size()));
         }
         return *this;
     }
 
-    self operator+(difference_type n) const {
-        self tmp = *this;
+    Self operator+(DifferenceType n) const {
+        Self tmp = *this;
         return tmp += n;
     }
 
-    self& operator-=(difference_type n) {
+    Self& operator-=(DifferenceType n) {
         return *this += -n;
     }
 
-    self operator-(difference_type n) const {
-        self tmp = *this;
+    Self operator-(DifferenceType n) const {
+        Self tmp = *this;
         return tmp -= n;
     }
 
-    reference operator[](difference_type n) const {
+    Reference operator[](DifferenceType n) const {
         return *(*this + n);
     }
 
-    bool operator==(const self& x) const {
+    bool operator==(const Self& x) const {
         return cur == x.cur;
     }
-    bool operator!=(const self& x) const {
+    bool operator!=(const Self& x) const {
         return cur != x.cur;
     }
-    bool operator<(const self& x) const {
+    bool operator<(const Self& x) const {
         return node == x.node ? cur < x.cur : node < x.node;
     }
-    bool operator>(const self& x) const {
+    bool operator>(const Self& x) const {
         return x < *this;
     }
-    bool operator<=(const self& x) const {
+    bool operator<=(const Self& x) const {
         return !(x < *this);
     }
-    bool operator>=(const self& x) const {
+    bool operator>=(const Self& x) const {
         return !(*this < x);
     }
 
-    void set_node(map_pointer new_node) {
+    void set_node(MapPointer new_node) {
         node = new_node;
         first = *node;
-        last = first + difference_type(buffer_size());
+        last = first + DifferenceType(buffer_size());
     }
 };
 
 template <typename Tp, typename Alloc = Allocator<Tp>>
 class Deque {
 public:
-    using value_type = Tp;
-    using pointer = value_type*;
-    using reference = value_type&;
-    using const_reference = const value_type&;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
+    using ValueType = Tp;
+    using Pointer = ValueType*;
+    using Reference = ValueType&;
+    using ConstReference = const ValueType&;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
 
-    using iterator = DequeIterator<Tp, Tp&, Tp*>;
-    using const_iterator = DequeIterator<Tp, const Tp&, const Tp*>;
-    using reverse_iterator = mstl::ReverseIterator<iterator>;
-    using const_reverse_iterator = mstl::ReverseIterator<const_iterator>;
+    using Iterator = DequeIterator<Tp, Tp&, Tp*>;
+    using ConstIterator = DequeIterator<Tp, const Tp&, const Tp*>;
+    using ReverseIterator = mstl::ReverseIterator<Iterator>;
+    using ConstReverseIterator = mstl::ReverseIterator<ConstIterator>;
 
-    using map_pointer = pointer*;
+    using MapPointer = Pointer*;
 
-    using data_allocator = SimpleAlloc<Tp, Alloc>;
-    using map_allocator = SimpleAlloc<pointer, Alloc>;
+    using DataAllocator = SimpleAlloc<ValueType, Alloc>;
+    using MapAllocator = SimpleAlloc<Pointer, Alloc>;
 
     static size_t buffer_size() {
         return __deque_buf_size(sizeof(Tp));
@@ -190,10 +190,10 @@ public:
     }
 
 protected:
-    iterator start;      // 第一个节点
-    iterator finish;     // 最后一个节点
-    map_pointer map;     // 指向map, map是连续空间
-    size_type map_size;  // map内有多少指针
+    Iterator start;      // 第一个节点
+    Iterator finish;     // 最后一个节点
+    MapPointer map;     // 指向map, map是连续空间
+    SizeType map_size;  // map内有多少指针
 
 public:
     // 构造函数
@@ -203,11 +203,11 @@ public:
         finish.cur = finish.first;
     }
 
-    explicit Deque(size_type n) : start(), finish(), map(nullptr), map_size(0) {
-        fill_initialize(n, value_type());
+    explicit Deque(SizeType n) : start(), finish(), map(nullptr), map_size(0) {
+        fill_initialize(n, ValueType());
     }
 
-    Deque(size_type n, const value_type& value) : start(), finish(), map(nullptr), map_size(0) {
+    Deque(SizeType n, const ValueType& value) : start(), finish(), map(nullptr), map_size(0) {
         fill_initialize(n, value);
     }
 
@@ -220,8 +220,8 @@ public:
         map_size = other.map_size;
 
         // 清空源对象
-        other.start = iterator();
-        other.finish = iterator();
+        other.start = Iterator();
+        other.finish = Iterator();
         other.map = nullptr;
         other.map_size = 0;
     }
@@ -232,10 +232,10 @@ public:
             // 释放当前资源
             if (map) {
                 destroy(start, finish);
-                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                for (MapPointer node = start.node; node <= finish.node; ++node) {
                     deallocate_node(*node);
                 }
-                map_allocator::deallocate(map, map_size);
+                MapAllocator::deallocate(map, map_size);
             }
 
             // 交换资源
@@ -245,8 +245,8 @@ public:
             map_size = other.map_size;
 
             // 清空源对象
-            other.start = iterator();
-            other.finish = iterator();
+            other.start = Iterator();
+            other.finish = Iterator();
             other.map = nullptr;
             other.map_size = 0;
         }
@@ -260,10 +260,10 @@ public:
             uninitialized_copy(other.start, other.finish, start);
         } catch (...) {
             destroy(start, finish);
-            for (map_pointer node = start.node; node <= finish.node; ++node) {
+            for (MapPointer node = start.node; node <= finish.node; ++node) {
                 deallocate_node(*node);
             }
-            map_allocator::deallocate(map, map_size);
+            MapAllocator::deallocate(map, map_size);
             throw;
         }
     }
@@ -274,10 +274,10 @@ public:
             // 释放当前资源
             if (map) {
                 destroy(start, finish);
-                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                for (MapPointer node = start.node; node <= finish.node; ++node) {
                     deallocate_node(*node);
                 }
-                map_allocator::deallocate(map, map_size);
+                MapAllocator::deallocate(map, map_size);
             }
 
             // 分配新资源并复制元素
@@ -286,10 +286,10 @@ public:
                 uninitialized_copy(other.start, other.finish, start);
             } catch (...) {
                 destroy(start, finish);
-                for (map_pointer node = start.node; node <= finish.node; ++node) {
+                for (MapPointer node = start.node; node <= finish.node; ++node) {
                     deallocate_node(*node);
                 }
-                map_allocator::deallocate(map, map_size);
+                MapAllocator::deallocate(map, map_size);
                 throw;
             }
         }
@@ -303,59 +303,59 @@ public:
             destroy(start, finish);
 
             // 释放所有节点
-            for (map_pointer node = start.node; node <= finish.node; ++node) {
+            for (MapPointer node = start.node; node <= finish.node; ++node) {
                 deallocate_node(*node);
             }
 
             // 释放 map 数组
-            map_allocator::deallocate(map, map_size);
+            MapAllocator::deallocate(map, map_size);
             map = nullptr;
             map_size = 0;
         }
     }
 
-    iterator begin() {
+    Iterator begin() {
         return start;
     }
-    const_iterator begin() const {
-        return const_iterator(start.cur, start.node);
+    ConstIterator begin() const {
+        return ConstIterator(start.cur, start.node);
     }
-    iterator end() {
+    Iterator end() {
         return finish;
     }
-    const_iterator end() const {
-        return const_iterator(finish.cur, finish.node);
+    ConstIterator end() const {
+        return ConstIterator(finish.cur, finish.node);
     }
 
-    reference operator[](size_type n) {
-        return *(start + difference_type(n));
+    Reference operator[](SizeType n) {
+        return *(start + DifferenceType(n));
     }
 
-    reference front() {
+    Reference front() {
         return *start;
     }
-    const_reference front() const {
+    ConstReference front() const {
         return *start;
     }
 
-    reference back() {
+    Reference back() {
         return *(finish - 1);
     }
-    const_reference back() const {
+    ConstReference back() const {
         return *(finish - 1);
     }
 
-    size_type size() const {
-        return size_type(finish - start);
+    SizeType size() const {
+        return SizeType(finish - start);
     }
 
     bool empty() const {
         return finish == start;
     }
 
-    void fill_initialize(size_type n, const value_type& value) {
+    void fill_initialize(SizeType n, const ValueType& value) {
         create_map_and_nodes(n);
-        map_pointer cur;
+        MapPointer cur;
         try {
             for (cur = start.node; cur < finish.node; ++cur) {
                 uninitialized_fill(*cur, *cur + buffer_size(), value);
@@ -368,25 +368,25 @@ public:
         }
     }
 
-    void create_map_and_nodes(size_type num_elements) {
-        size_type num_nodes = num_elements / buffer_size() + 1;
+    void create_map_and_nodes(SizeType num_elements) {
+        SizeType num_nodes = num_elements / buffer_size() + 1;
         map_size = std::max(initial_map_size(), num_nodes + 2);
-        map = map_allocator::allocate(map_size);
-        map_pointer nstart = map + (map_size - num_nodes) / 2;
-        map_pointer nfinish = nstart + num_nodes;
+        map = MapAllocator::allocate(map_size);
+        MapPointer nstart = map + (map_size - num_nodes) / 2;
+        MapPointer nfinish = nstart + num_nodes;
 
-        map_pointer cur;
+        MapPointer cur;
         try {
             for (cur = nstart; cur < nfinish; ++cur) {
                 *cur = allocate_node();
             }
         } catch (...) {
             // 释放已分配的节点
-            for (map_pointer node = nstart; node < cur; ++node) {
+            for (MapPointer node = nstart; node < cur; ++node) {
                 deallocate_node(*node);
             }
             // 释放 map 数组
-            map_allocator::deallocate(map, map_size);
+            MapAllocator::deallocate(map, map_size);
             map = nullptr;
             map_size = 0;
             throw;
@@ -398,21 +398,21 @@ public:
         finish.cur = finish.first + num_elements % buffer_size();
     }
 
-    size_type initial_map_size() const {
-        return std::max(map_size, size_type(8));
+    SizeType initial_map_size() const {
+        return std::max(map_size, SizeType(8));
     }
 
-    pointer allocate_node() {
-        return data_allocator::allocate(buffer_size());
+    Pointer allocate_node() {
+        return DataAllocator::allocate(buffer_size());
     }
 
-    void deallocate_node(pointer p) {
-        data_allocator::deallocate(p, buffer_size());
+    void deallocate_node(Pointer p) {
+        DataAllocator::deallocate(p, buffer_size());
     }
 
     template <typename U>
     void push_back(U&& x)
-        requires std::constructible_from<value_type, U>
+        requires std::constructible_from<ValueType, U>
     {
         if (finish.cur != finish.last - 1) {
             construct(finish.cur, std::forward<U>(x));
@@ -424,7 +424,7 @@ public:
 
     template <typename U>
     void push_front(U&& x)
-        requires std::constructible_from<value_type, U>
+        requires std::constructible_from<ValueType, U>
     {
         if (start.cur != start.first) {
             construct(start.cur - 1, std::forward<U>(x));
@@ -482,11 +482,11 @@ public:
         finish = start;
     }
 
-    iterator erase(iterator pos) {
-        iterator next = pos;
+    Iterator erase(Iterator pos) {
+        Iterator next = pos;
         ++next;
-        difference_type index = pos - start;
-        if (index < difference_type(size() >> 1)) {
+        DifferenceType index = pos - start;
+        if (index < DifferenceType(size() >> 1)) {
             std::copy_backward(start, pos, next);
             pop_front();
         } else {
@@ -496,29 +496,29 @@ public:
         return start + index;
     }
 
-    iterator erase(iterator first, iterator last) {
+    Iterator erase(Iterator first, Iterator last) {
         if (first == start && last == finish) {
             clear();
             return finish;
         } else {
-            difference_type n = last - first;
-            difference_type elems_before = first - start;
-            if (elems_before < difference_type((size() - n) / 2)) {
+            DifferenceType n = last - first;
+            DifferenceType elems_before = first - start;
+            if (elems_before < DifferenceType((size() - n) / 2)) {
                 std::copy_backward(start, first, last);
-                iterator new_start = start + n;
+                Iterator new_start = start + n;
                 destroy(start, new_start);
 
-                for (map_pointer cur = start.node; cur < new_start.node; ++cur) {
-                    data_allocator::deallocate(*cur, buffer_size());
+                for (MapPointer cur = start.node; cur < new_start.node; ++cur) {
+                    DataAllocator::deallocate(*cur, buffer_size());
                 }
                 start = new_start;
             } else {
                 std::copy(last, finish, first);
-                iterator new_finish = finish - n;
+                Iterator new_finish = finish - n;
                 destroy(new_finish, finish);
 
-                for (map_pointer cur = new_finish.node + 1; cur <= finish.node; ++cur) {
-                    data_allocator::deallocate(*cur, buffer_size());
+                for (MapPointer cur = new_finish.node + 1; cur <= finish.node; ++cur) {
+                    DataAllocator::deallocate(*cur, buffer_size());
                 }
                 finish = new_finish;
             }
@@ -526,23 +526,23 @@ public:
         }
     }
 
-    void reserve_map_at_front(size_type nodes_to_add = 1) {
-        if (static_cast<size_type>(start.node - map) < nodes_to_add) {
+    void reserve_map_at_front(SizeType nodes_to_add = 1) {
+        if (static_cast<SizeType>(start.node - map) < nodes_to_add) {
             reallocate_map(nodes_to_add, true);
         }
     }
 
-    void reserve_map_at_back(size_type nodes_to_add = 1) {
-        if (static_cast<size_type>(map_size - (finish.node - map)) < nodes_to_add + 1) {
+    void reserve_map_at_back(SizeType nodes_to_add = 1) {
+        if (static_cast<SizeType>(map_size - (finish.node - map)) < nodes_to_add + 1) {
             reallocate_map(nodes_to_add, false);
         }
     }
 
-    void reallocate_map(size_type nodes_to_add, bool add_at_front) {
-        size_type old_num_nodes = finish.node - start.node + 1;
-        size_type new_num_nodes = old_num_nodes + nodes_to_add;
+    void reallocate_map(SizeType nodes_to_add, bool add_at_front) {
+        SizeType old_num_nodes = finish.node - start.node + 1;
+        SizeType new_num_nodes = old_num_nodes + nodes_to_add;
 
-        map_pointer new_start;
+        MapPointer new_start;
         if (map_size > 2 * new_num_nodes) {
             new_start = map + (map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
             if (new_start < start.node) {
@@ -551,12 +551,12 @@ public:
                 std::copy_backward(start.node, finish.node + 1, new_start + old_num_nodes);
             }
         } else {
-            size_type new_map_size = map_size + std::max(map_size, nodes_to_add) + 2;
-            map_pointer new_map = map_allocator::allocate(new_map_size);
+            SizeType new_map_size = map_size + std::max(map_size, nodes_to_add) + 2;
+            MapPointer new_map = MapAllocator::allocate(new_map_size);
             new_start =
                 new_map + (new_map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
             std::copy(start.node, finish.node + 1, new_start);
-            map_allocator::deallocate(map, map_size);
+            MapAllocator::deallocate(map, map_size);
             map = new_map;
             map_size = new_map_size;
         }
@@ -565,14 +565,14 @@ public:
         finish.set_node(new_start + old_num_nodes - 1);
     }
 
-    iterator insert(iterator position, const value_type& x) {
+    Iterator insert(Iterator position, const ValueType& x) {
         if (position.cur == start.cur) {
             push_front(x);
             return start;
         }
         if (position.cur == finish.cur) {
             push_back(x);
-            iterator tmp = finish;
+            Iterator tmp = finish;
             --tmp;
             return tmp;
         } else {
@@ -580,14 +580,14 @@ public:
         }
     }
 
-    iterator insert(iterator position, value_type&& x) {
+    Iterator insert(Iterator position, ValueType&& x) {
         if (position.cur == start.cur) {
             push_front(std::move(x));
             return start;
         }
         if (position.cur == finish.cur) {
             push_back(std::move(x));
-            iterator tmp = finish;
+            Iterator tmp = finish;
             --tmp;
             return tmp;
         } else {
@@ -596,8 +596,8 @@ public:
     }
 
     template <typename... Args>
-    iterator emplace(iterator position, Args&&... args)
-        requires std::constructible_from<value_type, Args...>
+    Iterator emplace(Iterator position, Args&&... args)
+        requires std::constructible_from<ValueType, Args...>
     {
         if (position.cur == start.cur) {
             emplace_front(std::forward<Args>(args)...);
@@ -605,7 +605,7 @@ public:
         }
         if (position.cur == finish.cur) {
             emplace_back(std::forward<Args>(args)...);
-            iterator tmp = finish;
+            Iterator tmp = finish;
             --tmp;
             return tmp;
         } else {
@@ -614,23 +614,23 @@ public:
     }
 
     template <typename... Args>
-    iterator __insert_aux(iterator position, Args&&... args) {
-        difference_type index = position - start;
-        if (index < difference_type(size() / 2)) {
+    Iterator __insert_aux(Iterator position, Args&&... args) {
+        DifferenceType index = position - start;
+        if (index < DifferenceType(size() / 2)) {
             push_front(front());
-            iterator front1 = start;
+            Iterator front1 = start;
             ++front1;
-            iterator front2 = front1;
+            Iterator front2 = front1;
             ++front2;
             position = start + index;
-            iterator position1 = position;
+            Iterator position1 = position;
             ++position1;
             std::copy(front2, position1, front1);
         } else {
             push_back(back());
-            iterator back1 = finish;
+            Iterator back1 = finish;
             --back1;
-            iterator back2 = back1;
+            Iterator back2 = back1;
             --back2;
             position = start + index;
             std::copy_backward(position, back2, back1);
@@ -641,7 +641,7 @@ public:
 
     template <typename... Args>
     void emplace_front(Args&&... args)
-        requires std::constructible_from<value_type, Args...>
+        requires std::constructible_from<ValueType, Args...>
     {
         if (start.cur != start.first) {
             construct(start.cur - 1, std::forward<Args>(args)...);
@@ -653,7 +653,7 @@ public:
 
     template <typename... Args>
     void emplace_back(Args&&... args)
-        requires std::constructible_from<value_type, Args...>
+        requires std::constructible_from<ValueType, Args...>
     {
         if (finish.cur != finish.last - 1) {
             construct(finish.cur, std::forward<Args>(args)...);
@@ -665,7 +665,7 @@ public:
 
     template <typename... Args>
     void __push_front_aux(Args&&... args)
-        requires std::constructible_from<value_type, Args...>
+        requires std::constructible_from<ValueType, Args...>
     {
         reserve_map_at_front();
         *(start.node - 1) = allocate_node();
@@ -683,7 +683,7 @@ public:
 
     template <typename... Args>
     void __push_back_aux(Args&&... args)
-        requires std::constructible_from<value_type, Args...>
+        requires std::constructible_from<ValueType, Args...>
     {
         reserve_map_at_back();
         *(finish.node + 1) = allocate_node();
@@ -698,20 +698,20 @@ public:
     }
 
     // 反向迭代器相关函数
-    reverse_iterator rbegin() {
-        return reverse_iterator(end());
+    ReverseIterator rbegin() {
+        return ReverseIterator(end());
     }
 
-    const_reverse_iterator rbegin() const {
-        return const_reverse_iterator(end());
+    ConstReverseIterator rbegin() const {
+        return ConstReverseIterator(end());
     }
 
-    reverse_iterator rend() {
-        return reverse_iterator(begin());
+    ReverseIterator rend() {
+        return ReverseIterator(begin());
     }
 
-    const_reverse_iterator rend() const {
-        return const_reverse_iterator(begin());
+    ConstReverseIterator rend() const {
+        return ConstReverseIterator(begin());
     }
 };
 }  // namespace mstl

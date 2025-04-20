@@ -11,10 +11,10 @@ namespace mstl {
 template <class T, class Sequence = Deque<T>>
 class Queue {
 public:
-    using value_type = typename Sequence::value_type;
-    using size_type = typename Sequence::size_type;
-    using reference = typename Sequence::reference;
-    using const_reference = typename Sequence::const_reference;
+    using ValueType = typename Sequence::ValueType;
+    using SizeType = typename Sequence::SizeType;
+    using Reference = typename Sequence::Reference;
+    using ConstReference = typename Sequence::ConstReference;
 
     friend bool operator==(const Queue& x, const Queue& y) {
         return x.c == y.c;
@@ -29,27 +29,27 @@ public:
         return c.empty();
     }
 
-    size_type size() const {
+    SizeType size() const {
         return c.size();
     }
 
-    reference front() {
+    Reference front() {
         return c.front();
     }
 
-    const_reference front() const {
+    ConstReference front() const {
         return c.front();
     }
 
-    reference back() {
+    Reference back() {
         return c.back();
     }
 
-    const_reference back() const {
+    ConstReference back() const {
         return c.back();
     }
 
-    void push(const value_type& x) {
+    void push(const ValueType& x) {
         c.push_back(x);
     }
 
@@ -71,13 +71,13 @@ bool operator<(const Queue<T, Sequence>& x, const Queue<T, Sequence>& y) {
     return x.c < y.c;
 }
 
-template <class T, class Sequence = Vector<T>, class Compare = Less<typename Sequence::value_type>>
+template <class T, class Sequence = Vector<T>, class Compare = Less<typename Sequence::ValueType>>
 class PriorityQueue {
 public:
-    using value_type = typename Sequence::value_type;
-    using size_type = typename Sequence::size_type;
-    using reference = typename Sequence::reference;
-    using const_reference = typename Sequence::const_reference;
+    using ValueType = typename Sequence::ValueType;
+    using SizeType = typename Sequence::SizeType;
+    using Reference = typename Sequence::Reference;
+    using ConstReference = typename Sequence::ConstReference;
 
 protected:
     Sequence c;
@@ -102,15 +102,15 @@ public:
         return c.empty();
     }
 
-    size_type size() const {
+    SizeType size() const {
         return c.size();
     }
 
-    const_reference top() const {
+    ConstReference top() const {
         return c.front();
     }
 
-    void push(const value_type& x) {
+    void push(const ValueType& x) {
         try {
             c.push_back(x);
             mstl::push_heap(c.begin(), c.end(), comp);

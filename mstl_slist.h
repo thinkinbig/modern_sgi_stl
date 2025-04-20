@@ -33,51 +33,51 @@ size_t __mstl_slist_size(SlistNode<T>* node) {
 
 template <typename T, typename Ref, typename Ptr>
 struct SlistIterator {
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
-    using iterator_category = ForwardIteratorTag;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
+    using IteratorCategory = ForwardIteratorTag;
 
-    using iterator = SlistIterator<T, T&, T*>;
-    using const_iterator = SlistIterator<T, const T&, const T*>;
-    using self = SlistIterator<T, Ref, Ptr>;
-    using value_type = T;
-    using pointer = Ptr;
-    using reference = Ref;
-    using list_node = SlistNode<T>;
+    using Iterator = SlistIterator<T, T&, T*>;
+    using ConstIterator = SlistIterator<T, const T&, const T*>;
+    using Self = SlistIterator<T, Ref, Ptr>;
+    using ValueType = T;
+    using Pointer = Ptr;
+    using Reference = Ref;
+    using ListNode = SlistNode<T>;
 
-    list_node* node;
+    ListNode* node;
 
-    SlistIterator(list_node* x) : node(x) {}
+    SlistIterator(ListNode* x) : node(x) {}
     SlistIterator() : node(0) {}
-    SlistIterator(const iterator& x) : node(x.node) {}
+    SlistIterator(const Iterator& x) : node(x.node) {}
 
     void incr() {
         node = node->next;
     }
 
-    bool operator==(const self& x) const {
+    bool operator==(const Self& x) const {
         return node == x.node;
     }
 
-    bool operator!=(const self& x) const {
+    bool operator!=(const Self& x) const {
         return node != x.node;
     }
 
-    reference operator*() const {
+    Reference operator*() const {
         return node->data;
     }
 
-    pointer operator->() const {
+    Pointer operator->() const {
         return &(operator*());
     }
 
-    self& operator++() {
+    Self& operator++() {
         incr();
         return *this;
     }
 
-    self operator++(int) {
-        self tmp = *this;
+    Self operator++(int) {
+        Self tmp = *this;
         incr();
         return tmp;
     }
@@ -86,40 +86,40 @@ struct SlistIterator {
 template <typename T, typename Alloc = alloc>
 class Slist {
 public:
-    using value_type = T;
-    using pointer = value_type*;
-    using const_pointer = const value_type*;
-    using reference = value_type&;
-    using const_reference = const value_type&;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
+    using ValueType = T;
+    using Pointer = ValueType*;
+    using ConstPointer = const ValueType*;
+    using Reference = ValueType&;
+    using ConstReference = const ValueType&;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
 
-    using iterator = SlistIterator<T, T&, T*>;
-    using const_iterator = SlistIterator<T, const T&, const T*>;
+    using Iterator = SlistIterator<T, T&, T*>;
+    using ConstIterator = SlistIterator<T, const T&, const T*>;
 
 private:
-    using list_node = SlistNode<T>;
-    using list_node_allocator = SimpleAlloc<list_node, Alloc>;
+    using ListNode = SlistNode<T>;
+    using ListNodeAllocator = SimpleAlloc<ListNode, Alloc>;
 
-    static list_node* create_node(const value_type& x) {
-        list_node* node = list_node_allocator::allocate();
+    static ListNode* create_node(const ValueType& x) {
+        ListNode* node = ListNodeAllocator::allocate();
         try {
             construct(&node->data, x);
             node->next = 0;
         } catch (...) {
-            list_node_allocator::deallocate(node);
+            ListNodeAllocator::deallocate(node);
             throw;
         }
         return node;
     }
 
-    static void destroy_node(list_node* node) {
+    static void destroy_node(ListNode* node) {
         destroy(&node->data);
-        list_node_allocator::deallocate(node);
+        ListNodeAllocator::deallocate(node);
     }
 
 private:
-    list_node head;
+    ListNode head;
 
 public:
     Slist() {
@@ -129,15 +129,15 @@ public:
         clear();
     }
 
-    iterator begin() {
-        return iterator(head.next);
+    Iterator begin() {
+        return Iterator(head.next);
     }
 
-    iterator end() {
-        return iterator(nullptr);
+    Iterator end() {
+        return Iterator(nullptr);
     }
 
-    size_type size() const {
+    SizeType size() const {
         return __mstl_slist_size(head.next);
     }
 
@@ -146,7 +146,7 @@ public:
     }
 
     void swap(Slist& L) {
-        list_node* tmp = head.next;
+        ListNode* tmp = head.next;
         head.next = L.head.next;
         L.head.next = tmp;
     }
@@ -158,16 +158,16 @@ public:
     }
 
 public:
-    reference front() {
+    Reference front() {
         return (head.next)->data;
     }
 
-    void push_front(const value_type& x) {
+    void push_front(const ValueType& x) {
         __mstl_slist_make_link(&head, create_node(x));
     }
 
     void pop_front() {
-        list_node* node = head.next;
+        ListNode* node = head.next;
         head.next = node->next;
         destroy_node(node);
     }

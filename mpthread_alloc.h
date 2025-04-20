@@ -100,6 +100,11 @@ private:
 // Main allocator class
 template <size_t _Max_size = MAX_BYTES>
 class PthreadAllocatorTemplate {
+public:
+    using ValueType = void;
+    using SizeType = std::size_t;
+    using Pointer = void*;
+
 private:
     using ThreadState = PthreadAllocPerThreadState<_Max_size>;
 
@@ -381,13 +386,13 @@ static_assert(check_pthread_alloc<MAX_BYTES>,
 template <typename T, size_t _Max_size = MAX_BYTES>
 class StlPthreadAllocator {
 public:
-    using value_type = T;
-    using pointer = T*;
-    using const_pointer = const T*;
-    using reference = T&;
-    using const_reference = const T&;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
+    using ValueType = T;
+    using Pointer = T*;
+    using ConstPointer = const T*;
+    using Reference = T&;
+    using ConstReference = const T&;
+    using SizeType = std::size_t;
+    using DifferenceType = std::ptrdiff_t;
 
     template <typename U>
     struct rebind {
@@ -399,24 +404,24 @@ public:
     template <typename U>
     StlPthreadAllocator(const StlPthreadAllocator<U, _Max_size>&) noexcept {}
 
-    pointer allocate(size_type n) {
-        return static_cast<pointer>(PthreadAllocatorTemplate<_Max_size>::allocate(n * sizeof(T)));
+    Pointer allocate(SizeType n) {
+        return static_cast<Pointer>(PthreadAllocatorTemplate<_Max_size>::allocate(n * sizeof(T)));
     }
 
-    void deallocate(pointer p, size_type n) {
+    void deallocate(Pointer p, SizeType n) {
         PthreadAllocatorTemplate<_Max_size>::deallocate(p, n * sizeof(T));
     }
 
-    pointer address(reference x) const noexcept {
+    Pointer address(Reference x) const noexcept {
         return std::addressof(x);
     }
 
-    const_pointer address(const_reference x) const noexcept {
+    ConstPointer address(ConstReference x) const noexcept {
         return std::addressof(x);
     }
 
-    size_type max_size() const noexcept {
-        return size_type(-1) / sizeof(T);
+    SizeType max_size() const noexcept {
+        return SizeType(-1) / sizeof(T);
     }
 
     template <typename U, typename... Args>

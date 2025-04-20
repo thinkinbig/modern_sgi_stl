@@ -2,64 +2,65 @@
 #define __MSTL_ITERATOR_TRAITS_H
 
 #include <cstddef>
+#include <iterator>
 #include "mstl_iterator_tags.h"
 
 namespace mstl {
 // 基本迭代器特征
-template <typename I>
-struct iterator_traits {
-    using iterator_category = typename I::iterator_category;
-    using value_type = typename I::value_type;
-    using difference_type = typename I::difference_type;
-    using pointer = typename I::pointer;
-    using reference = typename I::reference;
+template <typename Iterator>
+struct IteratorTraits {
+    using IteratorCategory = typename Iterator::IteratorCategory;
+    using ValueType = typename Iterator::ValueType;
+    using DifferenceType = typename Iterator::DifferenceType;
+    using Pointer = typename Iterator::Pointer;
+    using Reference = typename Iterator::Reference;
 };
 
 // 指针特化
 template <typename T>
-struct iterator_traits<T*> {
-    using iterator_category = RandomAccessIteratorTag;
-    using value_type = std::remove_cv_t<T>;
-    using difference_type = ptrdiff_t;
-    using pointer = T*;
-    using reference = T&;
+struct IteratorTraits<T*> {
+    using IteratorCategory = RandomAccessIteratorTag;
+    using ValueType = std::remove_cv_t<T>;
+    using DifferenceType = ptrdiff_t;
+    using Pointer = T*;
+    using Reference = T&;
 };
 
 // const指针特化
 template <typename T>
-struct iterator_traits<const T*> {
-    using iterator_category = RandomAccessIteratorTag;
-    using value_type = std::remove_cv_t<T>;
-    using difference_type = ptrdiff_t;
-    using pointer = const T*;
-    using reference = const T&;
+struct IteratorTraits<const T*> {
+    using IteratorCategory = RandomAccessIteratorTag;
+    using ValueType = std::remove_cv_t<T>;
+    using DifferenceType = ptrdiff_t;
+    using Pointer = const T*;
+    using Reference = const T&;
 };
 
 // void类型特化
 template <>
-struct iterator_traits<void> {
-    using iterator_category = void;
-    using value_type = void;
-    using difference_type = std::ptrdiff_t;
-    using pointer = void;
-    using reference = void;
+struct IteratorTraits<void> {
+    using IteratorCategory = void;
+    using ValueType = void;
+    using DifferenceType = std::ptrdiff_t;
+    using Pointer = void;
+    using Reference = void;
 };
 
 // 类型别名辅助工具
 template <typename I>
-using iterator_value_t = typename iterator_traits<I>::value_type;
+using IteratorValueType = typename IteratorTraits<I>::ValueType;
 
 template <typename I>
-using iterator_reference_t = typename iterator_traits<I>::reference;
+using IteratorReferenceType = typename IteratorTraits<I>::Reference;
 
 template <typename I>
-using iterator_difference_t = typename iterator_traits<I>::difference_type;
+using IteratorDifferenceType = typename IteratorTraits<I>::DifferenceType;
 
 template <typename I>
-using iterator_category_t = typename iterator_traits<I>::iterator_category;
+using IteratorCategoryType = typename IteratorTraits<I>::IteratorCategory;
 
 template <typename I>
-using iterator_pointer_t = typename iterator_traits<I>::pointer;
+using IteratorPointerType = typename IteratorTraits<I>::Pointer;
 
 // 迭代器类型检查辅助函数，用于代替concepts
 namespace detail {
@@ -68,55 +69,56 @@ struct is_valid_iterator : std::false_type {};
 
 template <typename T>
 struct is_valid_iterator<
-    T, std::void_t<typename iterator_traits<T>::iterator_category,
-                   typename iterator_traits<T>::value_type,
-                   typename iterator_traits<T>::difference_type,
-                   typename iterator_traits<T>::pointer, typename iterator_traits<T>::reference>>
+    T, std::void_t<typename IteratorTraits<T>::IteratorCategory,
+                   typename IteratorTraits<T>::ValueType,
+                   typename IteratorTraits<T>::DifferenceType,
+                   typename IteratorTraits<T>::Pointer,
+                   typename IteratorTraits<T>::Reference>>
     : std::true_type {};
 
 template <typename T>
 struct is_input_iterator
     : std::bool_constant<
           is_valid_iterator<T>::value &&
-          std::is_base_of_v<InputIteratorTag, typename iterator_traits<T>::iterator_category>> {};
+          std::is_base_of_v<InputIteratorTag, typename IteratorTraits<T>::IteratorCategory>> {};
 
 template <typename T>
 struct is_forward_iterator
     : std::bool_constant<
           is_input_iterator<T>::value &&
-          std::is_base_of_v<ForwardIteratorTag, typename iterator_traits<T>::iterator_category>> {};
+          std::is_base_of_v<ForwardIteratorTag, typename IteratorTraits<T>::IteratorCategory>> {};
 
 template <typename T>
 struct is_bidirectional_iterator
     : std::bool_constant<is_forward_iterator<T>::value &&
                          std::is_base_of_v<BidirectionalIteratorTag,
-                                           typename iterator_traits<T>::iterator_category>> {};
+                                           typename IteratorTraits<T>::IteratorCategory>> {};
 
 template <typename T>
 struct is_random_access_iterator
     : std::bool_constant<is_bidirectional_iterator<T>::value &&
                          std::is_base_of_v<RandomAccessIteratorTag,
-                                           typename iterator_traits<T>::iterator_category>> {};
+                                           typename IteratorTraits<T>::IteratorCategory>> {};
 
 template <typename T>
 struct is_contiguous_iterator
     : std::bool_constant<is_random_access_iterator<T>::value &&
                          std::is_base_of_v<ContiguousIteratorTag,
-                                           typename iterator_traits<T>::iterator_category>> {};
+                                           typename IteratorTraits<T>::IteratorCategory>> {};
 
 template <typename I>
-typename iterator_traits<I>::iterator_category iterator_category(const I&) {
-    return typename iterator_traits<I>::iterator_category();
+typename IteratorTraits<I>::IteratorCategory iterator_category(const I&) {
+    return typename IteratorTraits<I>::IteratorCategory();
 }
 
 template <typename I>
-typename iterator_traits<I>::difference_type* distance_type(const I&) {
-    return static_cast<typename iterator_traits<I>::difference_type*>(nullptr);
+typename IteratorTraits<I>::DifferenceType* distance_type(const I&) {
+    return static_cast<typename IteratorTraits<I>::DifferenceType*>(nullptr);
 }
 
 template <typename I>
-typename iterator_traits<I>::value_type* value_type(const I&) {
-    return static_cast<typename iterator_traits<I>::value_type*>(nullptr);
+typename IteratorTraits<I>::ValueType* value_type(const I&) {
+    return static_cast<typename IteratorTraits<I>::ValueType*>(nullptr);
 }
 }  // namespace detail
 
@@ -138,12 +140,12 @@ protected:
     Iterator current;
 
 public:
-    using iterator_type = Iterator;
-    using iterator_category = typename iterator_traits<Iterator>::iterator_category;
-    using value_type = typename iterator_traits<Iterator>::value_type;
-    using difference_type = typename iterator_traits<Iterator>::difference_type;
-    using pointer = typename iterator_traits<Iterator>::pointer;
-    using reference = typename iterator_traits<Iterator>::reference;
+    using IteratorType = Iterator;
+    using IteratorCategory = typename IteratorTraits<Iterator>::IteratorCategory;
+    using ValueType = typename IteratorTraits<Iterator>::ValueType;
+    using DifferenceType = typename IteratorTraits<Iterator>::DifferenceType;
+    using Pointer = typename IteratorTraits<Iterator>::Pointer;
+    using Reference = typename IteratorTraits<Iterator>::Reference;
 
     // 构造函数
     ReverseIterator() = default;
@@ -158,12 +160,12 @@ public:
     }
 
     // 运算符
-    reference operator*() const {
+    Reference operator*() const {
         Iterator tmp = current;
         return *--tmp;
     }
 
-    pointer operator->() const {
+    Pointer operator->() const {
         return &(operator*());
     }
 
@@ -189,25 +191,25 @@ public:
         return tmp;
     }
 
-    ReverseIterator operator+(difference_type n) const {
+    ReverseIterator operator+(DifferenceType n) const {
         return ReverseIterator(current - n);
     }
 
-    ReverseIterator& operator+=(difference_type n) {
+    ReverseIterator& operator+=(DifferenceType n) {
         current -= n;
         return *this;
     }
 
-    ReverseIterator operator-(difference_type n) const {
+    ReverseIterator operator-(DifferenceType n) const {
         return ReverseIterator(current + n);
     }
 
-    ReverseIterator& operator-=(difference_type n) {
+    ReverseIterator& operator-=(DifferenceType n) {
         current += n;
         return *this;
     }
 
-    reference operator[](difference_type n) const {
+    Reference operator[](DifferenceType n) const {
         return *(*this + n);
     }
 };

@@ -22,10 +22,10 @@ public:
     using MallocHandler = void (*)();
     using MallocFunction = void* (*)(size_t);
     using ReallocFunction = void* (*)(void*, size_t);
-    using pointer = void*;
-    using const_pointer = const void*;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
+    using Pointer = void*;
+    using ConstPointer = const void*;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
 
     template <typename T>
     struct rebind {
@@ -237,17 +237,17 @@ using thread_safe_alloc = DefaultAllocTemplate<true, 0>;  // 多线程版本
 template <typename Tp, typename Alloc>
 class SimpleAlloc {
 public:
-    using value_type = Tp;
-    using pointer = Tp*;
-    using const_pointer = const Tp*;
-    using reference = Tp&;
-    using const_reference = const Tp&;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
+    using ValueType = Tp;
+    using Pointer = Tp*;
+    using ConstPointer = const Tp*;
+    using Reference = Tp&;
+    using ConstReference = const Tp&;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
 
     template <typename U>
-    struct rebind {
-        using other = SimpleAlloc<U, Alloc>;
+    struct RebindAlloc {
+        using Other = SimpleAlloc<U, Alloc>;
     };
 
     static Tp* allocate(size_t n = 1) {
@@ -258,7 +258,7 @@ public:
     static void deallocate(Tp* p, size_t n = 1) {
         if (p != 0) {
             Alloc a;
-            a.deallocate(reinterpret_cast<typename Alloc::pointer>(p), n * sizeof(Tp));
+            a.deallocate(reinterpret_cast<typename Alloc::Pointer>(p), n * sizeof(Tp));
         }
     }
 };

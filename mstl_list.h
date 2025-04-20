@@ -22,17 +22,17 @@ struct ListNode {
 
 template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
-    using iterator_category = BidirectionalIteratorTag;
-    using value_type = T;
-    using pointer = Ptr;
-    using reference = Ref;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
+    using IteratorCategory = BidirectionalIteratorTag;
+    using ValueType = T;
+    using Pointer = Ptr;
+    using Reference = Ref;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
     using Node = ListNode<T>;
 
-    using iterator = ListIterator<T, T&, T*>;
-    using const_iterator = ListIterator<T, const T&, const T*>;
-    using self = ListIterator<T, Ref, Ptr>;
+    using Iterator = ListIterator<T, T&, T*>;
+    using ConstIterator = ListIterator<T, const T&, const T*>;
+    using Self = ListIterator<T, Ref, Ptr>;
 
     Node* kNode;
 
@@ -40,14 +40,14 @@ struct ListIterator {
     ListIterator() : kNode(nullptr) {}
 
     // 允许从非const转换到const
-    ListIterator(const self& x) : kNode(x.kNode) {}
+    ListIterator(const Self& x) : kNode(x.kNode) {}
 
-    self& operator=(const self& x) {
+    Self& operator=(const Self& x) {
         kNode = x.kNode;
         return *this;
     }
 
-    self& operator=(self&& x) {
+    Self& operator=(Self&& x) {
         kNode = x.kNode;
         x.kNode = nullptr;
         return *this;
@@ -64,40 +64,40 @@ struct ListIterator {
         kNode = kNode->prev;
     }
 
-    reference operator*() const {
+    Reference operator*() const {
         return kNode->data;
     }
-    pointer operator->() const {
+    Pointer operator->() const {
         return &(operator*());
     }
 
-    self& operator++() {
+    Self& operator++() {
         incr();
         return *this;
     }
 
-    self operator++(int) {
-        self tmp = *this;
+    Self operator++(int) {
+        Self tmp = *this;
         incr();
         return tmp;
     }
 
-    self& operator--() {
+    Self& operator--() {
         decr();
         return *this;
     }
 
-    self operator--(int) {
-        self tmp = *this;
+    Self operator--(int) {
+        Self tmp = *this;
         decr();
         return tmp;
     }
 
-    bool operator==(const self& x) const {
+    bool operator==(const Self& x) const {
         return kNode == x.kNode;
     }
 
-    bool operator!=(const self& x) const {
+    bool operator!=(const Self& x) const {
         return kNode != x.kNode;
     }
 };
@@ -105,23 +105,23 @@ struct ListIterator {
 template <typename T, typename Alloc = alloc>
 class List {
 public:
-    using value_type = T;
-    using pointer = T*;
-    using const_pointer = const T*;
-    using reference = T&;
-    using const_reference = const T&;
-    using size_type = size_t;
-    using difference_type = ptrdiff_t;
+    using ValueType = T;
+    using Pointer = T*;
+    using ConstPointer = const T*;
+    using Reference = T&;
+    using ConstReference = const T&;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
     using Node = ListNode<T>;
 
-    using iterator = ListIterator<T, T&, T*>;
-    using const_iterator = ListIterator<T, const T&, const T*>;
+    using Iterator = ListIterator<T, T&, T*>;
+    using ConstIterator = ListIterator<T, const T&, const T*>;
 
     // 构造函数
     List() {
         createNode();
     }
-    List(size_type n, const T& value = T()) {
+    List(SizeType n, const T& value = T()) {
         createNode();
         insert(begin(), n, value);
     }
@@ -166,16 +166,16 @@ public:
     }
 
     // 迭代器相关
-    iterator begin() {
+    Iterator begin() {
         return kNode->next;
     }
-    const_iterator begin() const {
+    ConstIterator begin() const {
         return kNode->next;
     }
-    iterator end() {
+    Iterator end() {
         return kNode;
     }
-    const_iterator end() const {
+    ConstIterator end() const {
         return kNode;
     }
 
@@ -183,21 +183,21 @@ public:
     bool empty() const {
         return kNode->next == kNode;
     }
-    size_type size() const {
+    SizeType size() const {
         return distance(begin(), end());
     }
 
     // 元素访问
-    reference front() {
+    Reference front() {
         return *begin();
     }
-    const_reference front() const {
+    ConstReference front() const {
         return *begin();
     }
-    reference back() {
+    Reference back() {
         return *(--end());
     }
-    const_reference back() const {
+    ConstReference back() const {
         return *(--end());
     }
 
@@ -216,7 +216,7 @@ public:
     }
 
     void pop_back() {
-        iterator tmp = --end();
+        Iterator tmp = --end();
         erase(tmp);
     }
 
@@ -225,7 +225,7 @@ public:
     }
 
     template <typename U>
-    iterator insert(iterator position, U&& x) {
+    Iterator insert(Iterator position, U&& x) {
         Node* tmp = getNode();
         tmp->data = std::forward<U>(x);
 
@@ -236,26 +236,26 @@ public:
         tmp->prev = node->prev;
         node->prev = tmp;
 
-        return iterator(tmp);
+        return Iterator(tmp);
     }
 
     template <typename U>
-    iterator insert(iterator position, size_type n, U&& x) {
-        for (size_type i = 0; i < n; ++i) {
+    Iterator insert(Iterator position, SizeType n, U&& x) {
+        for (SizeType i = 0; i < n; ++i) {
             insert(position, x);
         }
         return position;
     }
 
     template <typename InputIterator>
-    iterator insert(iterator position, InputIterator first, InputIterator last) {
+    Iterator insert(Iterator position, InputIterator first, InputIterator last) {
         for (; first != last; ++first) {
             insert(position, *first);
         }
         return position;
     }
 
-    iterator erase(iterator position) {
+    Iterator erase(Iterator position) {
         Node* node = position.kNode;
         Node* nextNode = node->next;
         Node* prevNode = node->prev;
@@ -265,10 +265,10 @@ public:
 
         putNode(node);
 
-        return iterator(nextNode);
+        return Iterator(nextNode);
     }
 
-    iterator erase(iterator first, iterator last) {
+    Iterator erase(Iterator first, Iterator last) {
         while (first != last) {
             first = erase(first);
         }
@@ -279,44 +279,44 @@ public:
         erase(begin(), end());
     }
 
-    void splice(iterator position, List& x) {
+    void splice(Iterator position, List& x) {
         if (!x.empty()) {
             transfer(position, x.begin(), x.end());
         }
     }
 
-    void splice(iterator position, List&& x) {
+    void splice(Iterator position, List&& x) {
         if (!x.empty()) {
             transfer(position, x.begin(), x.end());
         }
     }
 
-    void splice(iterator position, [[maybe_unused]] List& x, iterator i) {
+    void splice(Iterator position, [[maybe_unused]] List& x, Iterator i) {
         if (position != i) {
             transfer(position, i, i.kNode->next);
         }
     }
 
-    void splice(iterator position, [[maybe_unused]] List&& x, iterator i) {
+    void splice(Iterator position, [[maybe_unused]] List&& x, Iterator i) {
         if (position != i) {
             transfer(position, i, i.kNode->next);
         }
     }
 
-    void splice(iterator position, [[maybe_unused]] List& x, iterator first, iterator last) {
+    void splice(Iterator position, [[maybe_unused]] List& x, Iterator first, Iterator last) {
         if (first != last) {
             transfer(position, first, last);
         }
     }
 
-    void splice(iterator position, [[maybe_unused]] List&& x, iterator first, iterator last) {
+    void splice(Iterator position, [[maybe_unused]] List&& x, Iterator first, Iterator last) {
         if (first != last) {
             transfer(position, first, last);
         }
     }
 
     void remove(const T& value) {
-        iterator current = begin();
+        Iterator current = begin();
         while (current != end()) {
             if (*current == value) {
                 current = erase(current);
@@ -340,8 +340,7 @@ public:
 
 protected:
     Node* kNode;
-    using node_allocator =
-        typename AllocatorTraits<SimpleAlloc<T, Alloc>>::template rebind_alloc<Node>;
+    using NodeAllocator = typename AllocatorTraits<SimpleAlloc<T, Alloc>>::template RebindAlloc<Node>;
 
     void createNode() {
         kNode = getNode();
@@ -350,7 +349,7 @@ protected:
     }
 
     // 辅助函数
-    void transfer(iterator position, iterator first, iterator last) {
+    void transfer(Iterator position, Iterator first, Iterator last) {
         if (position != first && position != last) {
             Node* firstNode = first.kNode;
             Node* lastNode = last.kNode->prev;
@@ -367,11 +366,11 @@ protected:
     }
 
     void putNode(Node* p) {
-        node_allocator::deallocate(p, 1);
+        NodeAllocator::deallocate(p, 1);
     }
 
     Node* getNode() {
-        return node_allocator::allocate(1);
+        return NodeAllocator::allocate(1);
     }
 };
 }  // namespace mstl

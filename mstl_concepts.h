@@ -31,17 +31,17 @@ concept TriviallyDestructible = std::is_trivially_destructible_v<T>;
 // 基本迭代器概念
 template <typename I>
 concept Iterator = requires(I i) {
-    typename iterator_traits<I>::iterator_category;
-    typename iterator_traits<I>::value_type;
-    typename iterator_traits<I>::difference_type;
-    typename iterator_traits<I>::pointer;
-    typename iterator_traits<I>::reference;
+    typename IteratorTraits<I>::IteratorCategory;
+    typename IteratorTraits<I>::ValueType;
+    typename IteratorTraits<I>::DifferenceType;
+    typename IteratorTraits<I>::Pointer;
+    typename IteratorTraits<I>::Reference;
 };
 
 // 输入迭代器概念
 template <typename I>
 concept InputIterator = Iterator<I> && requires(I i) {
-    { *i } -> std::same_as<typename iterator_traits<I>::reference>;
+    { *i } -> std::same_as<typename IteratorTraits<I>::Reference>;
     { ++i } -> std::same_as<I&>;
     { i++ } -> std::same_as<I>;
     { i != i } -> std::convertible_to<bool>;
@@ -50,7 +50,7 @@ concept InputIterator = Iterator<I> && requires(I i) {
 // 输出迭代器概念
 template <typename I, typename T>
 concept OutputIterator = Iterator<I> && requires(I i, T t) {
-    { *i = t } -> std::same_as<typename iterator_traits<I>::reference>;
+    { *i = t } -> std::same_as<typename IteratorTraits<I>::Reference>;
     { ++i } -> std::same_as<I&>;
     { i++ } -> std::same_as<I>;
 };
@@ -59,40 +59,40 @@ concept OutputIterator = Iterator<I> && requires(I i, T t) {
 template <typename I>
 concept ForwardIterator =
     InputIterator<I> &&
-    std::is_base_of_v<ForwardIteratorTag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<ForwardIteratorTag, typename IteratorTraits<I>::IteratorCategory>;
 
 // 双向迭代器概念
 template <typename I>
 concept BidirectionalIterator =
     ForwardIterator<I> &&
-    std::is_base_of_v<BidirectionalIteratorTag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<BidirectionalIteratorTag, typename IteratorTraits<I>::IteratorCategory>;
 
 // 随机访问迭代器概念
 template <typename I>
 concept RandomAccessIterator =
     BidirectionalIterator<I> &&
-    std::is_base_of_v<RandomAccessIteratorTag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<RandomAccessIteratorTag, typename IteratorTraits<I>::IteratorCategory>;
 
 // 连续迭代器概念
 template <typename I>
 concept ContiguousIterator =
     RandomAccessIterator<I> &&
-    std::is_base_of_v<ContiguousIteratorTag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<ContiguousIteratorTag, typename IteratorTraits<I>::IteratorCategory>;
 
 // 容器相关合约
 template <typename C>
 concept Container = requires(C c) {
-    typename C::value_type;
-    typename C::reference;
-    typename C::const_reference;
-    typename C::iterator;
-    typename C::const_iterator;
-    typename C::difference_type;
-    typename C::size_type;
-    { c.begin() } -> std::same_as<typename C::iterator>;
-    { c.end() } -> std::same_as<typename C::iterator>;
-    { c.size() } -> std::same_as<typename C::size_type>;
-    { c.max_size() } -> std::same_as<typename C::size_type>;
+    typename C::ValueType;
+    typename C::Reference;
+    typename C::ConstReference;
+    typename C::Iterator;
+    typename C::ConstIterator;
+    typename C::DifferenceType;
+    typename C::SizeType;
+    { c.begin() } -> std::same_as<typename C::Iterator>;
+    { c.end() } -> std::same_as<typename C::Iterator>;
+    { c.size() } -> std::same_as<typename C::SizeType>;
+    { c.max_size() } -> std::same_as<typename C::SizeType>;
     { c.empty() } -> std::convertible_to<bool>;
 };
 
@@ -102,25 +102,25 @@ concept AllocatableType = std::is_object_v<T> && !std::is_array_v<T>;
 
 template <typename A>
 concept AllocatorBase = requires {
-    typename A::value_type;
-    typename A::size_type;
-    typename A::difference_type;
-    typename A::pointer;
-    typename A::const_pointer;
-    typename A::reference;
-    typename A::const_reference;
+    typename A::ValueType;
+    typename A::SizeType;
+    typename A::DifferenceType;
+    typename A::Pointer;
+    typename A::ConstPointer;
+    typename A::Reference;
+    typename A::ConstReference;
 };
 
-template <typename A, typename T = typename A::value_type>
+template <typename A, typename T = typename A::ValueType>
 concept StandardAllocator =
-    AllocatorBase<A> && requires(A a, typename A::size_type n, typename A::pointer p) {
-        { a.allocate(n) } -> std::same_as<typename A::pointer>;
+    AllocatorBase<A> && requires(A a, typename A::SizeType n, typename A::Pointer p) {
+        { a.allocate(n) } -> std::same_as<typename A::Pointer>;
         { a.deallocate(p, n) } -> std::same_as<void>;
-        { a.address(std::declval<typename A::reference>()) } -> std::same_as<typename A::pointer>;
+        { a.address(std::declval<typename A::Reference>()) } -> std::same_as<typename A::Pointer>;
         {
-            a.address(std::declval<typename A::const_reference>())
-        } -> std::same_as<typename A::const_pointer>;
-        { a.max_size() } -> std::convertible_to<typename A::size_type>;
+            a.address(std::declval<typename A::ConstReference>())
+        } -> std::same_as<typename A::ConstPointer>;
+        { a.max_size() } -> std::convertible_to<typename A::SizeType>;
 
         // 检查rebind成员
         typename A::template rebind<int>::other;
@@ -128,8 +128,8 @@ concept StandardAllocator =
 
 // 简化的分配器，仅需要基本操作
 template <typename A, typename T>
-concept SimpleAllocator = requires(A a, std::size_t n, T* p) {
-    { A::allocate(n) } -> std::convertible_to<void*>;
+concept SimpleAllocator = requires(A a, typename A::SizeType n, typename A::Pointer p) {
+    { A::allocate(n) } -> std::convertible_to<typename A::Pointer>;
     { A::deallocate(p, n) } -> std::same_as<void>;
 };
 

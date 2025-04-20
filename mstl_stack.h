@@ -8,10 +8,10 @@ namespace mstl {
 template <class T, class Sequence = Deque<T>>
 class Stack {
 public:
-    using value_type = typename Sequence::value_type;
-    using size_type = typename Sequence::size_type;
-    using reference = typename Sequence::reference;
-    using const_reference = typename Sequence::const_reference;
+    using ValueType = typename Sequence::ValueType;
+    using SizeType = typename Sequence::SizeType;
+    using Reference = typename Sequence::Reference;
+    using ConstReference = typename Sequence::ConstReference;
 
     friend bool operator==(const Stack& x, const Stack& y) {
         return x.c == y.c;
@@ -27,16 +27,16 @@ public:
     bool empty() const {
         return c.empty();
     }
-    size_type size() const {
+    SizeType size() const {
         return c.size();
     }
-    reference top() {
+    Reference top() {
         return c.back();
     }
-    const_reference top() const {
+    ConstReference top() const {
         return c.back();
     }
-    void push(const value_type& x) {
+    void push(const ValueType& x) {
         c.push_back(x);
     }
     void pop() {
