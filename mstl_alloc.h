@@ -202,7 +202,7 @@ public:
             std::lock_guard<std::mutex> lock(kMutex);
         }
 
-        myFreeList = &freeList[freeListIndex(n)];
+        myFreeList = reinterpret_cast<Obj* volatile*>(&freeList[freeListIndex(n)]);
         q->freeListLink = *myFreeList;
         *myFreeList = q;
     }

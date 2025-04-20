@@ -6,6 +6,13 @@
 
 namespace mstl {
 
+// 声明 __distance 函数
+template <InputIterator I>
+typename iterator_traits<I>::difference_type __distance(I first, I last, input_iterator_tag);
+
+template <RandomAccessIterator I>
+typename iterator_traits<I>::difference_type __distance(I first, I last, random_access_iterator_tag);
+
 // 统一的distance接口
 template <typename I>
 typename iterator_traits<I>::difference_type distance(I first, I last) {
