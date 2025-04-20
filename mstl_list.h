@@ -21,7 +21,7 @@ struct ListNode {
 
 template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
-    using iterator_category = bidirectional_iterator_tag;
+    using iterator_category = BidirectionalIteratorTag;
     using value_type = T;
     using pointer = Ptr;
     using reference = Ref;

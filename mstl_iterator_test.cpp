@@ -71,7 +71,7 @@ int main() {
 
     std::cout << "  迭代器类别测试: ";
     if (std::is_same_v<decltype(mstl::detail::iterator_category(vec.begin())),
-                       mstl::random_access_iterator_tag>) {
+                       mstl::RandomAccessIteratorTag>) {
         std::cout << "正确" << std::endl;
     } else {
         std::cout << "错误" << std::endl;

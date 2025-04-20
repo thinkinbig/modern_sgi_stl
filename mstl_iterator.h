@@ -2,17 +2,17 @@
 #define __MSGI_STL_INTERNAL_ITERATOR_H
 
 #include "mstl_concepts.h"
-#include "mstl_iterator_traits.h"
 #include "mstl_iterator_tags.h"
+#include "mstl_iterator_traits.h"
 
 namespace mstl {
 
 // 声明 __distance 函数
 template <InputIterator I>
-typename iterator_traits<I>::difference_type __distance(I first, I last, mstl::input_iterator_tag);
+typename iterator_traits<I>::difference_type __distance(I first, I last, InputIteratorTag);
 
 template <RandomAccessIterator I>
-typename iterator_traits<I>::difference_type __distance(I first, I last, mstl::random_access_iterator_tag);
+typename iterator_traits<I>::difference_type __distance(I first, I last, RandomAccessIteratorTag);
 
 // 统一的distance接口
 template <typename I>
@@ -22,7 +22,7 @@ typename iterator_traits<I>::difference_type distance(I first, I last) {
 
 // 计算迭代器之间的距离 - 输入迭代器版本
 template <InputIterator I>
-typename iterator_traits<I>::difference_type __distance(I first, I last, mstl::input_iterator_tag) {
+typename iterator_traits<I>::difference_type __distance(I first, I last, InputIteratorTag) {
     typename iterator_traits<I>::difference_type n = 0;
     while (first != last) {
         ++first;
@@ -33,21 +33,20 @@ typename iterator_traits<I>::difference_type __distance(I first, I last, mstl::i
 
 // 计算迭代器之间的距离 - 随机访问迭代器版本
 template <RandomAccessIterator I>
-typename iterator_traits<I>::difference_type __distance(I first, I last,
-                                                        mstl::random_access_iterator_tag) {
+typename iterator_traits<I>::difference_type __distance(I first, I last, RandomAccessIteratorTag) {
     return last - first;
 }
 
 // advance实现 - 输入迭代器版本
 template <InputIterator I>
-void __advance(I& i, typename iterator_traits<I>::difference_type n, mstl::input_iterator_tag) {
+void __advance(I& i, typename iterator_traits<I>::difference_type n, InputIteratorTag) {
     while (n--)
         ++i;
 }
 
 // advance实现 - 双向迭代器版本
 template <BidirectionalIterator I>
-void __advance(I& i, typename iterator_traits<I>::difference_type n, mstl::bidirectional_iterator_tag) {
+void __advance(I& i, typename iterator_traits<I>::difference_type n, BidirectionalIteratorTag) {
     if (n >= 0) {
         while (n--)
             ++i;
@@ -59,7 +58,7 @@ void __advance(I& i, typename iterator_traits<I>::difference_type n, mstl::bidir
 
 // advance实现 - 随机访问迭代器版本
 template <RandomAccessIterator I>
-void __advance(I& i, typename iterator_traits<I>::difference_type n, mstl::random_access_iterator_tag) {
+void __advance(I& i, typename iterator_traits<I>::difference_type n, RandomAccessIteratorTag) {
     i += n;
 }
 

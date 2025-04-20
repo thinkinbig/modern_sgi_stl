@@ -273,8 +273,8 @@ template <bool threads, int inst>
 size_t DefaultAllocTemplate<threads, inst>::heapSize = 0;
 
 template <bool threads, int inst>
-typename DefaultAllocTemplate<threads, inst>::Obj* volatile 
-    DefaultAllocTemplate<threads, inst>::freeList[kNumFreeLists] = {0};  // 定义
+typename DefaultAllocTemplate<threads, inst>::Obj* volatile DefaultAllocTemplate<
+    threads, inst>::freeList[kNumFreeLists] = {0};  // 定义
 
 template <bool threads, int inst>
 void* DefaultAllocTemplate<threads, inst>::refill(size_t n) {

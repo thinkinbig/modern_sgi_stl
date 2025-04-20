@@ -43,10 +43,12 @@ inline void __destroy(I first, I last, T*) {
 }
 
 // 统一的迭代器范围销毁接口
-template <InputIterator I>
+template <typename I>
+    requires InputIterator<I>
 inline void destroy(I first, I last) {
-    using value_type = typename iterator_traits<I>::value_type;
-    __destroy(first, last, static_cast<value_type*>(nullptr));
+    for (; first != last; ++first) {
+        destroy(&*first);
+    }
 }
 
 // 特化版本：char和wchar_t

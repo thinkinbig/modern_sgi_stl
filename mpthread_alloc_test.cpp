@@ -151,7 +151,7 @@ double run_multi_thread_test(int num_threads, int allocs_per_thread, bool use_cu
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-    return static_cast<double>(duration) / 1000000.0; // 转换为秒
+    return static_cast<double>(duration) / 1000000.0;  // 转换为秒
 }
 
 void test_multi_thread() {
@@ -187,9 +187,11 @@ void benchmark() {
         total_std_time += std_time;
         total_custom_time += custom_time;
 
-        std::cout << "标准分配器时间: " << std::fixed << std::setprecision(6) << std_time << " 秒" << std::endl;
-        std::cout << "自定义分配器时间: " << std::fixed << std::setprecision(6) << custom_time << " 秒" << std::endl;
-        std::cout << "性能提升: " << std::fixed << std::setprecision(2) 
+        std::cout << "标准分配器时间: " << std::fixed << std::setprecision(6) << std_time << " 秒"
+                  << std::endl;
+        std::cout << "自定义分配器时间: " << std::fixed << std::setprecision(6) << custom_time
+                  << " 秒" << std::endl;
+        std::cout << "性能提升: " << std::fixed << std::setprecision(2)
                   << (std_time - custom_time) / std_time * 100 << "%" << std::endl;
     }
 
@@ -197,9 +199,11 @@ void benchmark() {
     double avg_custom_time = total_custom_time / num_runs;
 
     std::cout << "\n平均性能:" << std::endl;
-    std::cout << "标准分配器: " << std::fixed << std::setprecision(6) << avg_std_time << " 秒" << std::endl;
-    std::cout << "自定义分配器: " << std::fixed << std::setprecision(6) << avg_custom_time << " 秒" << std::endl;
-    std::cout << "平均性能提升: " << std::fixed << std::setprecision(2) 
+    std::cout << "标准分配器: " << std::fixed << std::setprecision(6) << avg_std_time << " 秒"
+              << std::endl;
+    std::cout << "自定义分配器: " << std::fixed << std::setprecision(6) << avg_custom_time << " 秒"
+              << std::endl;
+    std::cout << "平均性能提升: " << std::fixed << std::setprecision(2)
               << (avg_std_time - avg_custom_time) / avg_std_time * 100 << "%" << std::endl;
 }
 

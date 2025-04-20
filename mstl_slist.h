@@ -35,7 +35,7 @@ template <typename T, typename Ref, typename Ptr>
 struct SlistIterator {
     using size_type = size_t;
     using difference_type = ptrdiff_t;
-    using iterator_category = forward_iterator_tag;
+    using iterator_category = ForwardIteratorTag;
 
     using iterator = SlistIterator<T, T&, T*>;
     using const_iterator = SlistIterator<T, const T&, const T*>;

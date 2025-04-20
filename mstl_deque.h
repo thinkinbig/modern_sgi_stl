@@ -7,8 +7,8 @@
 #include "mstl_alloc.h"
 #include "mstl_allocator.h"
 #include "mstl_construct.h"
-#include "mstl_uninitialized.h"
 #include "mstl_iterator_tags.h"
+#include "mstl_uninitialized.h"
 
 namespace mstl {
 
@@ -19,7 +19,7 @@ size_t __deque_buf_size(size_t sz) {
 
 template <typename Tp, typename Ref, typename Ptr>
 struct DequeIterator {
-    using iterator_category = bidirectional_iterator_tag;
+    using iterator_category = BidirectionalIteratorTag;
     using value_type = Tp;
     using difference_type = ptrdiff_t;
     using pointer = Ptr;
@@ -166,8 +166,8 @@ public:
 
     using iterator = DequeIterator<Tp, Tp&, Tp*>;
     using const_iterator = DequeIterator<Tp, const Tp&, const Tp*>;
-    using reverse_iterator = mstl::reverse_iterator<iterator>;
-    using const_reverse_iterator = mstl::reverse_iterator<const_iterator>;
+    using reverse_iterator = mstl::ReverseIterator<iterator>;
+    using const_reverse_iterator = mstl::ReverseIterator<const_iterator>;
 
     using map_pointer = pointer*;
 
