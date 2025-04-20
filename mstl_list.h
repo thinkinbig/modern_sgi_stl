@@ -2,6 +2,7 @@
 #define __MSGI_STL_INTERNAL_LIST_H
 
 #include <cstddef>
+#include <initializer_list>
 #include "mstl_alloc.h"
 #include "mstl_allocator.h"
 #include "mstl_iterator.h"
@@ -154,6 +155,14 @@ public:
     ~List() {
         clear();
         putNode(kNode);
+    }
+
+    // 初始化列表构造函数
+    List(std::initializer_list<T> il) {
+        createNode();
+        for (const auto& x : il) {
+            push_back(x);
+        }
     }
 
     // 迭代器相关

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <utility>
+#include <initializer_list>
 #include "mstl_alloc.h"
 #include "mstl_construct.h"
 #include "mstl_uninitialized.h"
@@ -89,6 +90,13 @@ public:
     }
     explicit Vector(size_type n) {
         fillInitialize(n, T());
+    }
+
+    // 初始化列表构造函数
+    Vector(std::initializer_list<T> il) {
+        kStart = allocateAndCopy(il.begin(), il.end());
+        kFinish = kStart + il.size();
+        kEndOfStorage = kFinish;
     }
 
     template <typename InputIterator>

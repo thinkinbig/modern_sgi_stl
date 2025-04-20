@@ -1,16 +1,15 @@
 #include "mstl_iterator.h"
-#include <iostream>
-#include <list>
-#include <string>
-#include <vector>
 #include "mstl_iterator_traits.h"
+#include "mstl_vector.h"
+#include "mstl_list.h"
+#include <iostream>
 
 int main() {
     std::cout << "===== 迭代器工具函数测试 =====" << std::endl;
 
     // 测试 distance
-    std::vector<int> vec = {1, 2, 3, 4, 5};
-    std::list<int> lst = {10, 20, 30, 40};
+    mstl::Vector<int> vec = {1, 2, 3, 4, 5};
+    mstl::List<int> lst = {10, 20, 30, 40};
 
     std::cout << "1. 向量distance测试:" << std::endl;
     auto vec_dist = mstl::distance(vec.begin(), vec.end());
@@ -47,7 +46,7 @@ int main() {
 
     mstl::advance(lst_it, 2);
     auto expected_it = lst.begin();
-    std::advance(expected_it, 2);
+    mstl::advance(expected_it, 2);
     std::cout << "  前进2步后: " << *lst_it << std::endl;
     std::cout << "  期望值: " << *expected_it << std::endl;
     std::cout << "  结果正确: " << (*lst_it == *expected_it ? "是" : "否") << std::endl;
@@ -60,7 +59,7 @@ int main() {
 
     mstl::advance(lst_back_it, -2);
     auto expected_back_it = --lst.end();
-    std::advance(expected_back_it, -2);
+    mstl::advance(expected_back_it, -2);
     std::cout << "  后退2步后: " << *lst_back_it << std::endl;
     std::cout << "  期望值: " << *expected_back_it << std::endl;
     std::cout << "  结果正确: " << (*lst_back_it == *expected_back_it ? "是" : "否") << std::endl;
@@ -78,16 +77,16 @@ int main() {
     }
 
     std::cout << "  距离类型测试: ";
-    if (std::is_same_v<std::remove_pointer_t<decltype(mstl::detail::distance_type(vec.begin()))>,
-                       typename std::vector<int>::iterator::difference_type>) {
+    if (std::is_same_v<decltype(mstl::detail::distance_type(vec.begin())),
+                       ptrdiff_t*>) {
         std::cout << "正确" << std::endl;
     } else {
         std::cout << "错误" << std::endl;
     }
 
     std::cout << "  值类型测试: ";
-    if (std::is_same_v<std::remove_pointer_t<decltype(mstl::detail::value_type(vec.begin()))>,
-                       typename std::vector<int>::iterator::value_type>) {
+    if (std::is_same_v<decltype(mstl::detail::value_type(vec.begin())),
+                       int*>) {
         std::cout << "正确" << std::endl;
     } else {
         std::cout << "错误" << std::endl;
