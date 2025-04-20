@@ -59,25 +59,25 @@ concept OutputIterator = Iterator<I> && requires(I i, T t) {
 template <typename I>
 concept ForwardIterator =
     InputIterator<I> &&
-    std::is_base_of_v<forward_iterator_tag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<ForwardIteratorTag, typename iterator_traits<I>::iterator_category>;
 
 // 双向迭代器概念
 template <typename I>
 concept BidirectionalIterator =
     ForwardIterator<I> &&
-    std::is_base_of_v<bidirectional_iterator_tag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<BidirectionalIteratorTag, typename iterator_traits<I>::iterator_category>;
 
 // 随机访问迭代器概念
 template <typename I>
 concept RandomAccessIterator =
     BidirectionalIterator<I> &&
-    std::is_base_of_v<random_access_iterator_tag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<RandomAccessIteratorTag, typename iterator_traits<I>::iterator_category>;
 
 // 连续迭代器概念
 template <typename I>
 concept ContiguousIterator =
     RandomAccessIterator<I> &&
-    std::is_base_of_v<contiguous_iterator_tag, typename iterator_traits<I>::iterator_category>;
+    std::is_base_of_v<ContiguousIteratorTag, typename iterator_traits<I>::iterator_category>;
 
 // 容器相关合约
 template <typename C>
