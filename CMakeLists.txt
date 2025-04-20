@@ -70,9 +70,15 @@ else()
 endif()
 
 # 设置输出目录
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+if(MSVC)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
+else()
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+endif()
 
 # 添加头文件目录
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -146,44 +152,79 @@ set(CTEST_OUTPUT_ON_FAILURE ON)
 set(CTEST_VERBOSE ON)
 
 # 添加测试
-add_test(NAME mstl_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_alloc_test)
-add_test(NAME mstl_construct_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_construct_test)
-add_test(NAME mstl_uninitialized_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_uninitialized_test)
-if(NOT WIN32)
-    add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mpthread_alloc_test)
+if(MSVC)
+    add_test(NAME mstl_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_alloc_test)
+    add_test(NAME mstl_construct_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_construct_test)
+    add_test(NAME mstl_uninitialized_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_uninitialized_test)
+    if(NOT WIN32)
+        add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpthread_alloc_test)
+    endif()
+    add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_iterator_test)
+    add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_vector_test)
+    add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
+    add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deque_test)
+    add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_stack_test)
+    add_test(NAME mstl_queue_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_queue_test)
+    add_test(NAME mstl_heap_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_heap_test)
+    add_test(NAME mstl_slist_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_slist_test)
+else()
+    add_test(NAME mstl_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_alloc_test)
+    add_test(NAME mstl_construct_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_construct_test)
+    add_test(NAME mstl_uninitialized_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_uninitialized_test)
+    if(NOT WIN32)
+        add_test(NAME mpthread_alloc_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpthread_alloc_test)
+    endif()
+    add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_iterator_test)
+    add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_vector_test)
+    add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_list_test)
+    add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_deque_test)
+    add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_stack_test)
+    add_test(NAME mstl_queue_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_queue_test)
+    add_test(NAME mstl_heap_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_heap_test)
+    add_test(NAME mstl_slist_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mstl_slist_test)
 endif()
-add_test(NAME mstl_iterator_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_iterator_test)
-add_test(NAME mstl_vector_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_vector_test)
-add_test(NAME mstl_list_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_list_test)
-add_test(NAME mstl_deque_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_deque_test)
-add_test(NAME mstl_stack_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_stack_test)
-add_test(NAME mstl_queue_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_queue_test)
-add_test(NAME mstl_heap_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_heap_test)
-add_test(NAME mstl_slist_test COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/mstl_slist_test)
 
 # 设置测试属性
-set_tests_properties(
-    mstl_alloc_test
-    mstl_construct_test
-    mstl_uninitialized_test
-    mstl_iterator_test
-    mstl_vector_test
-    mstl_list_test
-    mstl_deque_test
-    mstl_heap_test
-    mstl_slist_test
-    PROPERTIES
-    ENVIRONMENT "CTEST_FULL_OUTPUT=1"
-    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>
-    LABELS "debug"
-)
+if(MSVC)
+    set_tests_properties(
+        mstl_alloc_test
+        mstl_construct_test
+        mstl_uninitialized_test
+        mstl_iterator_test
+        mstl_vector_test
+        mstl_list_test
+        mstl_deque_test
+        mstl_heap_test
+        mstl_slist_test
+        PROPERTIES
+        ENVIRONMENT "CTEST_FULL_OUTPUT=1"
+        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        LABELS "debug"
+    )
+else()
+    set_tests_properties(
+        mstl_alloc_test
+        mstl_construct_test
+        mstl_uninitialized_test
+        mstl_iterator_test
+        mstl_vector_test
+        mstl_list_test
+        mstl_deque_test
+        mstl_heap_test
+        mstl_slist_test
+        PROPERTIES
+        ENVIRONMENT "CTEST_FULL_OUTPUT=1"
+        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        LABELS "debug"
+    )
+endif()
 
 if(NOT WIN32)
     set_tests_properties(
         mpthread_alloc_test
         PROPERTIES
         ENVIRONMENT "CTEST_FULL_OUTPUT=1"
-        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>
+        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         LABELS "debug"
     )
 endif()
