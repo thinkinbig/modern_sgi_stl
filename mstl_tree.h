@@ -23,7 +23,7 @@ struct RbTreeNodeBase {
     BasePtr left;     // 指向左节点
     BasePtr right;    // 指向右节点
 
-    static BasePtr minimun(BasePtr x) {
+    static BasePtr minimum(BasePtr x) {
         while (x->left != 0)
             x = x->left;
         return x;
@@ -200,7 +200,89 @@ protected:
     SizeType node_count;  // 追踪记录树的大小
     LinkType header;      // 这是实现上的一个技巧
     Compare key_compare;  // 节点间的键值大小比较准则，应该会是个function_object
-};
+
+    LinkType& root() const { return reinterpret_cast<LinkType&>(header->parent); }
+    LinkType& leftmost() const { return reinterpret_cast<LinkType&>(header->left); }
+    LinkType& rightmost() const { return reinterpret_cast<LinkType&>(header->right); }
+
+    static LinkType& left(LinkType x) {
+        return reinterpret_cast<LinkType&>(x->left);
+    }
+
+    static LinkType& right(LinkType x) {
+        return reinterpret_cast<LinkType&>(x->right);
+    }
+
+    static LinkType& parent(LinkType x) {
+        return reinterpret_cast<LinkType&>(x->parent);
+    }
+
+    static Reference value(LinkType x) {
+        return x->value_field;
+    }
+
+    static const Key& key(LinkType x) {
+        return KeyOfValue()(value(x));
+    }
+
+    static ColorType& color(LinkType x) {
+        return reinterpret_cast<ColorType&>(x->color);
+    }
+
+    static LinkType minimum(LinkType x) {
+        return reinterpret_cast<LinkType>(RbTreeNodeBase::minimum(x));
+    }
+
+    static LinkType maximum(LinkType x) {
+        return reinterpret_cast<LinkType>(RbTreeNodeBase::maximum(x));
+    }
+
+public:
+    using Iterator = RbTreeIterator<ValueType, Reference, Pointer>;
+
+private:
+    Iterator __insert(BasePtr x, BasePtr y, const ValueType& v);
+    LinkType __copy(LinkType x, LinkType p);
+    void __erase(LinkType x);
+
+    void init() {
+        header = get_node();  // 产生一个节点空间， 令header指向它
+        color(header) = __rb_tree_red; // 令header为红色， 用来区分header
+                                    // 和root，在iterator.operator++之中
+
+        root() = 0;
+        leftmost() = header;  // 令header的左子节点为自己
+        rightmost() = header; // 令header的右子节点为自己
+    }
+
+public:
+    RbTree(const Compare& comp = Compare())
+    : node_count(0), key_compare(comp) {
+        init();
+    }
+
+    ~RbTree() {
+        clear();
+        put_node(header);
+    }
+
+    RbTree<Key, Value, KeyOfValue, Compare, Alloc>& 
+    operator=(const RbTree<Key, Value, KeyOfValue, Compare, Alloc>& x);
+
+public:
+    // accessors
+    Compare key_comp() const { return key_compare; }
+    
+    Iterator begin() { return leftmost(); }
+    Iterator end() { return header; }
+    bool empty() const { return node_count == 0; }
+    SizeType size() const { return node_count; }
+    SizeType max_size() const { return SizeType(-1); }
+
+public:
+    pair<Iterator, bool> insert_unique(const ValueType& x);
+
+    Iterator insert_equal(const ValueType& x);
 
 }  // namespace mstl
 
