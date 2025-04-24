@@ -5,16 +5,17 @@
 #include <cstddef>
 #include "mstl_iterator_tags.h"
 #include "mstl_alloc.h"
+#include "mstl_construct.h"
 
 namespace mstl {
 
-using __rb_tree_color_type = bool;
+using RbTreeColorType = bool;
 
-const __rb_tree_color_type __rb_tree_red = false;   // 红色为0
-const __rb_tree_color_type __rb_tree_black = true;  // 黑色为1
+const RbTreeColorType __rb_tree_red = false;   // 红色为0
+const RbTreeColorType __rb_tree_black = true;  // 黑色为1
 
 struct RbTreeNodeBase {
-    using ColorType = __rb_tree_color_type;
+    using ColorType = RbTreeColorType;
     using BasePtr = RbTreeNodeBase*;
 
     ColorType color;  // 节点颜色
@@ -37,8 +38,9 @@ struct RbTreeNodeBase {
 
 template <typename Value>
 struct RbTreeNode : public RbTreeNodeBase {
-    using link_type = RbTreeNode<Value>*;
-    Value value_field;  // 节点值
+    using LinkType= RbTreeNode<Value>*;
+    using ValueType = Value;
+    ValueType value_field;  // 节点值
 };
 
 struct RbTreeBaseIterator {
@@ -147,9 +149,59 @@ template <typename Key, typename Value, typename KeyOfValue, typename Compare, t
 class RbTree {
 protected:
     using VoidPointer = void*;
+    using BasePtr = RbTreeNodeBase*;
+    using RbTreeNode = RbTreeNode<Value>;
+    using RbTreeNodeAllocator = SimpleAlloc<RbTreeNode, Alloc>;
+    using ColorType = RbTreeColorType;
+
+public:
+    using KeyType = Key;
+    using ValueType = Value;
+    using Pointer = ValueType*;
+    using ConstPointer = const ValueType*;
+    using Reference = ValueType&;
+    using ConstReference = const ValueType&;
+    using LinkType = RbTreeNode*;
+    using SizeType = size_t;
+    using DifferenceType = ptrdiff_t;
+
+    LinkType get_node() { return RbTreeNodeAllocator::allocate(); }
     
+    void put_node(LinkType p) {
+        RbTreeBaseIterator::deallocate(p);
+    }
+
+    LinkType create_node(const ValueType& x) {
+        LinkType tmp = get_node();
+        try {
+            construct(&tmp->value_field, x);
+       } catch(...) {
+        put_node(tmp);
+        throw;
+       }
+       return tmp;
+    }
+
+    LinkType clone_node(LinkType x) {
+        //复制一个节点的值和颜色
+        LinkType tmp = create_node(x->value_field);
+        tmp->color = x->color;
+        tmp->left = 0;
+        tmp->right = 0;
+        return tmp;
+    }
+
+    void destroy_node(LinkType p) {
+        destroy(&p->value_field);
+        put_node(p);
+    }
+protected:
+    // RB-tree 只以三笔数据表现
+    SizeType node_count;  // 追踪记录树的大小
+    LinkType header;      // 这是实现上的一个技巧
+    Compare key_compare;  // 节点间的键值大小比较准则，应该会是个function_object
 };
 
 }  // namespace mstl
 
-#endif
+#endif //__MSGI_STL_INTERNAL_TREE_H 
