@@ -20,6 +20,7 @@ typename IteratorTraits<I>::DifferenceType distance(I first, I last) {
     return __distance(first, last, typename IteratorTraits<I>::IteratorCategory());
 }
 
+
 // 计算迭代器之间的距离 - 输入迭代器版本
 template <InputIterator I>
 typename IteratorTraits<I>::DifferenceType __distance(I first, I last, InputIteratorTag) {

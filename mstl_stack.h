@@ -18,7 +18,13 @@ public:
     }
 
     friend bool operator<(const Stack& x, const Stack& y) {
-        return x.c < y.c;
+        return std::lexicographical_compare(
+            x.c.begin(), x.c.end(),
+            y.c.begin(), y.c.end(),
+            [](const ValueType& a, const ValueType& b) {
+                return a < b;
+            }
+        );
     }
 
 protected:
