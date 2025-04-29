@@ -280,9 +280,52 @@ public:
     SizeType max_size() const { return SizeType(-1); }
 
 public:
-    pair<Iterator, bool> insert_unique(const ValueType& x);
-
+    std::pair<Iterator, bool> insert_unique(const ValueType& x);
     Iterator insert_equal(const ValueType& x);
+};
+
+template <typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc>
+typename RbTree<Key, Value, KeyOfValue, Compare, Alloc>::Iterator
+RbTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_equal(const ValueType& v) {
+    LinkType y = header;
+    LinkType x = root();
+    while (x != 0) {
+        y = x;
+        x = key_compare(KeyOfValue()(v), key(x)) ? left(x) : right(x);
+        // 以上，遇大则往左， 遇小或等于则往右
+    }
+    return __insert(x, y, v);
+}
+
+template <typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc>
+std::pair<typename RbTree<Key, Value, KeyOfValue, Compare, Alloc>::Iterator,
+ bool> RbTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_unique(const Value& v) {
+    LinkType y = header;
+    LinkType x = root();
+    bool comp = true;
+    while (x != 0) {
+        y = x;
+        comp = key_compare(KeyOfValue()(v), key(x));
+        x = comp ? left(x) : right(x);
+    }
+
+    Iterator j = Iterator(y);
+    if (comp)
+        if (j == begin()) {
+            return std::pair<Iterator, bool>(__insert(x, y, v), true);
+        } else {
+            // 插入点的父节点不为最左节点
+            // 调整j，回头准备测试
+            --j;
+        }
+        if (key_compare(key(j.node), KeyOfValue()(v))) {
+            // 小于新值 插入到右边
+            return std::pair<Iterator, bool>(__insert(x, y, v), true);
+        }
+
+    // 新值一定和树中的键重复， 不该插入该值
+    return std::pair<Iterator, bool>(j, false);
+ }
 
 }  // namespace mstl
 
