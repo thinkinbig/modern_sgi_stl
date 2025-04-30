@@ -16,13 +16,7 @@ struct Pair {
 
     // 带参数的构造函数
     template <typename U1 = T1, typename U2 = T2>
-    Pair(const U1& a, const U2& b) : first(a) {
-        if constexpr (std::is_array_v<T2>) {
-            std::copy(std::begin(b), std::end(b), std::begin(second));
-        } else {
-            second = b;
-        }
-    }
+    Pair(const U1& a, const U2& b) : first(a), second(b) {}
 
     // 复制构造函数
     Pair(const Pair& p) = default;

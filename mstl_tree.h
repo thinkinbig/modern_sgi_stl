@@ -167,7 +167,7 @@ protected:
     LinkType get_node() { return RbTreeNodeAllocator::allocate(); }
     void put_node(LinkType p) { RbTreeNodeAllocator::deallocate(p); }
 
-    LinkType create_node(const ValueType& x) {
+    LinkType create_node(const Value& x) {
         LinkType tmp = get_node();
         try {
             construct(&tmp->value_field, x);
@@ -213,11 +213,11 @@ protected:
                 else {
                     if (x == right(parent(x))) {
                         x = parent(x);
-                        __rb_tree_rotate_left(x, header);
+                        __rb_tree_rotate_left(x, header->parent);
                     }
                     color(parent(x)) = __rb_tree_black;
                     color(parent(parent(x))) = __rb_tree_red;
-                    __rb_tree_rotate_right(parent(parent(x)), header);
+                    __rb_tree_rotate_right(parent(parent(x)), header->parent);
                 }
             }
             else {
@@ -231,11 +231,11 @@ protected:
                 else {
                     if (x == left(parent(x))) {
                         x = parent(x);
-                        __rb_tree_rotate_right(x, header);
+                        __rb_tree_rotate_right(x, header->parent);
                     }
                     color(parent(x)) = __rb_tree_black;
                     color(parent(parent(x))) = __rb_tree_red;
-                    __rb_tree_rotate_left(parent(parent(x)), header);   
+                    __rb_tree_rotate_left(parent(parent(x)), header->parent);
                 }
             }
         }
@@ -474,13 +474,10 @@ public:
     RbTree& operator=(const RbTree& x) {
         if (this != &x) {
             clear();
-            put_node(header);
-            header = 0;
             node_count = 0;
             key_compare = x.key_compare;
             
             try {
-                init();
                 if (x.root() != 0) {
                     root() = __copy(x.root(), header);
                     leftmost() = minimum(root());
@@ -489,10 +486,6 @@ public:
                 }
             } catch(...) {
                 clear();
-                if (header) {
-                    put_node(header);
-                    header = 0;
-                }
                 throw;
             }
         }
@@ -501,7 +494,10 @@ public:
 
     ~RbTree() {
         clear();
-        put_node(header);
+        if (header) {
+            put_node(header);
+            header = 0;
+        }
     }
 
     Compare key_comp() const { return key_compare; }
@@ -556,19 +552,18 @@ public:
     }
 
     Iterator find(const Key& k) {
-        LinkType y = header;
         LinkType x = root();
 
         while (x != 0) {
-            if (!key_compare(key(x), k)) {
-                y = x;
-                x = left(x);
-            }
-            else
+            if (key_compare(key(x), k)) {
                 x = right(x);
+            } else if (key_compare(k, key(x))) {
+                x = left(x);
+            } else {
+                return Iterator(x);
+            }
         }
-        Iterator j = Iterator(y);
-        return (j == end() || key_compare(k, key(static_cast<LinkType>(j.node)))) ? end() : j;
+        return end();
     }
 
     SizeType count(const Key& k) const {
@@ -644,8 +639,8 @@ private:
         LinkType y = static_cast<LinkType>(y_);
         LinkType z;
 
+        z = create_node(v);
         if (y == header || x != 0 || key_compare(KeyOfValue()(v), key(y))) {
-            z = create_node(v);
             left(y) = z;
             if (y == header) {
                 root() = z;
@@ -655,7 +650,6 @@ private:
                 leftmost() = z;
         }
         else {
-            z = create_node(v);
             right(y) = z;
             if (y == rightmost())
                 rightmost() = z;
