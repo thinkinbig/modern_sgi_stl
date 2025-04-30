@@ -15,14 +15,25 @@ namespace mstl {
             Value value;
             Node(Key key, Value value) : key(key), value(value) { }
         };
+    public:
+        using KeyType = Key;
+        using ValueType = Value;
+        using SizeType = size_t;
+        using Reference = Value&;
+        using ConstReference = const Value&;
+        using Iterator = typename std::list<Node>::iterator;
+        using ConstIterator = typename std::list<Node>::const_iterator;
+        using Allocator = std::allocator<Node>;
 
-        int capacity_;
+    private:
+
+        SizeType capacity_;
         std::list<Node> cache_;
         std::unordered_map<Key, typename std::list<Node>::iterator> map_;
 
 
     public:
-        LRUCache(int capacity): capacity_(capacity), cache_(), map_() { }
+        LRUCache(SizeType capacity): capacity_(capacity), cache_(), map_() { }
 
         Value get(Key key) {
             auto it = map_.find(key);
@@ -59,6 +70,6 @@ namespace mstl {
         bool contains(Key key) {
             return map_.find(key) != map_.end();
         }
-    }
+    };
 
 }
