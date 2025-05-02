@@ -60,6 +60,10 @@ void test_basic_operations() {
         }
         std::cout << std::endl;
 
+        // 测试结构化输出
+        std::cout << "\n树的结构化输出:" << std::endl;
+        std::cout << tree;
+
     } catch(...) {
         std::cerr << "test_basic_operations 发生异常" << std::endl;
     }

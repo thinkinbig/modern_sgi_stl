@@ -1,5 +1,8 @@
 {
     "files.associations": {
+        "*.c": "c",
+        "*.pl": "prolog",
+        "*.ixx": "cpp",
         "array": "cpp",
         "atomic": "cpp",
         "deque": "cpp",
@@ -64,6 +67,9 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "__hash_table": "cpp",
+        "__node_handle": "cpp",
+        "forward_list": "cpp"
     }
 }

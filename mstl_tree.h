@@ -24,17 +24,17 @@ struct RbTreeNodeBase {
     BasePtr left;
     BasePtr right;
 
-    static BasePtr _S_minimum(BasePtr x) _GLIBCXX_NOEXCEPT {
+    static BasePtr minimum(BasePtr x) noexcept {
         while (x->left != 0) x = x->left;
         return x;
     }
 
-    static BasePtr _S_maximum(BasePtr x) _GLIBCXX_NOEXCEPT {
+    static BasePtr maximum(BasePtr x) noexcept {
         while (x->right != 0) x = x->right;
         return x;
     }
 
-    BasePtr _M_base_ptr() const _GLIBCXX_NOEXCEPT {
+    BasePtr base_ptr() const noexcept {
         return const_cast<BasePtr>(this);
     }
 };
@@ -161,8 +161,8 @@ protected:
         return k;
     }
     static ColorType& color(LinkType x) { return x->color; }
-    static LinkType minimum(LinkType x) { return reinterpret_cast<LinkType>(RbTreeNodeBase::_S_minimum(x)); }
-    static LinkType maximum(LinkType x) { return reinterpret_cast<LinkType>(RbTreeNodeBase::_S_maximum(x)); }
+    static LinkType minimum(LinkType x) { return reinterpret_cast<LinkType>(RbTreeNodeBase::minimum(x)); }
+    static LinkType maximum(LinkType x) { return reinterpret_cast<LinkType>(RbTreeNodeBase::maximum(x)); }
 
     LinkType get_node() { return RbTreeNodeAllocator::allocate(); }
     void put_node(LinkType p) { RbTreeNodeAllocator::deallocate(p); }
@@ -633,6 +633,11 @@ public:
         }
     }
 
+
+    // 正确的模板友元声明，允许 operator<< 访问 protected 成员
+    template <typename K, typename V, typename KoV, typename C, typename A>
+    friend std::ostream& operator<<(std::ostream&, const RbTree<K, V, KoV, C, A>&);
+
 private:
     Iterator __insert(BasePtr x_, BasePtr y_, const Value& v) {
         LinkType x = static_cast<LinkType>(x_);
@@ -663,6 +668,28 @@ private:
         return Iterator(z);
     }
 };
+
+namespace detail {
+template <typename Value>
+void print_tree_impl(std::ostream& os, RbTreeNode<Value>* node, RbTreeNode<Value>* header, int depth = 0, char branch = ' ') {
+    if (!node || node == header) return;
+    print_tree_impl<Value>(os, static_cast<RbTreeNode<Value>*>(node->right), header, depth + 1, '/');
+    for (int i = 0; i < depth; ++i) os << "    ";
+    os << branch << "--" << node->value_field << (node->color == __rb_tree_red ? " (R)" : " (B)") << std::endl;
+    print_tree_impl<Value>(os, static_cast<RbTreeNode<Value>*>(node->left), header, depth + 1, '\\');
+}
+}
+
+template <typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc>
+std::ostream& operator<<(std::ostream& os, const RbTree<Key, Value, KeyOfValue, Compare, Alloc>& tree) {
+    using NodePtr = RbTreeNode<Value>*;
+    if (tree.root() == nullptr || tree.header == tree.root()) {
+        os << "<empty tree>" << std::endl;
+        return os;
+    }
+    detail::print_tree_impl<Value>(os, static_cast<NodePtr>(tree.root()), static_cast<NodePtr>(tree.header));
+    return os;
+}
 
 }  // namespace mstl
 
