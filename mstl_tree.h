@@ -449,6 +449,8 @@ public:
     using DifferenceType = ptrdiff_t;
     using Iterator = RbTreeIterator<Value, Reference, Pointer>;
     using ConstIterator = RbTreeIterator<Value, ConstReference, ConstPointer>;
+    using ReverseIterator = ReverseIterator<Iterator>;
+    using ConstReverseIterator = ReverseIterator<ConstIterator>;
 
     RbTree(const Compare& comp = Compare())
     : node_count(0), key_compare(comp) {
@@ -505,6 +507,14 @@ public:
     Iterator end() { return header; }
     ConstIterator begin() const { return leftmost(); }
     ConstIterator end() const { return header; }
+
+    ReverseIterator rbegin() { return ReverseIterator(end()); }
+    ReverseIterator rend() { return ReverseIterator(begin()); }
+    ConstReverseIterator rbegin() const { return ConstReverseIterator(end()); }
+    ConstReverseIterator rend() const { return ConstReverseIterator(begin()); }
+    ConstReverseIterator crbegin() const { return ConstReverseIterator(end()); }
+    ConstReverseIterator crend() const { return ConstReverseIterator(begin()); }
+
     bool empty() const { return node_count == 0; }
     SizeType size() const { return node_count; }
     SizeType max_size() const { return SizeType(-1); }
@@ -529,6 +539,12 @@ public:
         if (key_compare(key(static_cast<LinkType>(j.node)), KeyOfValue()(v)))
             return Pair<Iterator, bool>(__insert(x, y, v), true);
         return Pair<Iterator, bool>(j, false);
+    }
+
+    template <typename InputIterator>
+    void insert_unique(InputIterator first, InputIterator last) {
+        for (; first != last; ++first)
+            insert_unique(*first);
     }
 
     Iterator insert_equal(const ValueType& v) {

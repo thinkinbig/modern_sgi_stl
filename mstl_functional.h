@@ -26,6 +26,17 @@ struct Greater {
     }
 };
 
+
+template <typename T>
+struct Identity {
+    using ArgumentType = T;
+    using ResultType = T;
+
+    const T& operator()(const T& x) const {
+        return x;
+    }
+};
+
 }  // namespace mstl
 
 #endif  // __MSGI_STL_INTERNAL_FUNCTIONAL_H
