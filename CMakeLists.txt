@@ -79,6 +79,8 @@ add_executable(mstl_heap_test mstl_heap_test.cpp)
 add_executable(mstl_slist_test mstl_slist_test.cpp)
 add_executable(mstl_tree_test mstl_tree_test.cpp)
 add_executable(mstl_lru_test mstl_lru_test.cpp)
+add_executable(mstl_set_test mstl_set_test.cpp)
+
 # 为所有测试添加调试信息
 set(DEBUG_FLAGS "-g -O1")
 
@@ -97,6 +99,7 @@ set(ALL_TESTS
     mstl_slist_test
     mstl_tree_test
     mstl_lru_test
+    mstl_set_test
 )
 
 foreach(TEST ${ALL_TESTS})

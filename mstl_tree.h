@@ -7,6 +7,7 @@
 #include "mstl_construct.h"
 #include "mstl_pair.h"
 #include "mstl_iterator.h"
+#include <ostream>
 
 namespace mstl {
 
@@ -135,11 +136,12 @@ struct RbTreeIterator : public RbTreeBaseIterator {
 
 template <typename Key, typename Value, typename KeyOfValue, typename Compare, typename Alloc = SimpleAlloc<Value, MallocAllocTemplate<0>>>
 class RbTree {
+public:
+    using SizeType = size_t;
 protected:
     using BasePtr = RbTreeNodeBase::BasePtr;
     using LinkType = RbTreeNode<Value>*;
     using RbTreeNodeAllocator = SimpleAlloc<RbTreeNode<Value>, MallocAllocTemplate<0>>;
-    using SizeType = size_t;
     using Reference = Value&;
     using ColorType = RbTreeNodeBase::ColorType;
 
@@ -309,6 +311,12 @@ protected:
         }
     }
 
+    void swap(RbTree& x) {
+        std::swap(header, x.header);
+        std::swap(node_count, x.node_count);
+        std::swap(key_compare, x.key_compare);
+    }
+
     BasePtr __rb_tree_rebalance_for_erase(BasePtr z, BasePtr& root) {
         BasePtr y = z;
         BasePtr x = 0;
@@ -449,8 +457,8 @@ public:
     using DifferenceType = ptrdiff_t;
     using Iterator = RbTreeIterator<Value, Reference, Pointer>;
     using ConstIterator = RbTreeIterator<Value, ConstReference, ConstPointer>;
-    using ReverseIterator = ReverseIterator<Iterator>;
-    using ConstReverseIterator = ReverseIterator<ConstIterator>;
+    using ReverseIterator = mstl::ReverseIterator<Iterator>;
+    using ConstReverseIterator = mstl::ReverseIterator<ConstIterator>;
 
     RbTree(const Compare& comp = Compare())
     : node_count(0), key_compare(comp) {
@@ -593,8 +601,8 @@ public:
         return n;
     }
 
-    Pair<Iterator, Iterator> equal_range(const Key& k) {
-        return Pair<Iterator, Iterator>(lower_bound(k), upper_bound(k));
+    Pair<ConstIterator, ConstIterator> equal_range(const Key& k) const {
+        return Pair<ConstIterator, ConstIterator>(lower_bound(k), upper_bound(k));
     }
 
     Iterator lower_bound(const Key& k) {
@@ -612,6 +620,20 @@ public:
         return Iterator(y);
     }
 
+    ConstIterator lower_bound(const Key& k) const {
+        LinkType y = header;
+        LinkType x = root();
+        while (x != 0) {
+            if (!key_compare(key(x), k)) {
+                y = x;
+                x = left(x);
+            }
+            else
+                x = right(x);
+        }
+        return ConstIterator(y);
+    }
+
     Iterator upper_bound(const Key& k) {
         LinkType y = header;
         LinkType x = root();
@@ -625,6 +647,20 @@ public:
                 x = right(x);
         }
         return Iterator(y);
+    }
+
+    ConstIterator upper_bound(const Key& k) const {
+        LinkType y = header;
+        LinkType x = root();
+        while (x != 0) {
+            if (key_compare(k, key(x))) {
+                y = x;
+                x = left(x);
+            }
+            else
+                x = right(x);
+        }
+        return ConstIterator(y);
     }
 
     void erase(Iterator position) {
@@ -647,6 +683,15 @@ public:
             while (first != last)
                 erase(first++);
         }
+    }
+
+    void erase(ConstIterator position) {
+        erase(Iterator(static_cast<LinkType>(position.node)));
+    }
+
+    void erase(ConstIterator first, ConstIterator last) {
+        while (first != last)
+            erase(first++);
     }
 
 
