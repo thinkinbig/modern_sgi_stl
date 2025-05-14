@@ -191,6 +191,209 @@ inline bool operator!=(const Allocator<T1, Alloc>&, const Allocator<T2, Alloc>&)
     return false;
 }
 
+
+template <class T, std::size_t growSize = 1024, std::size_t hotZoneSize = 1024>
+class MemoryPool
+{
+    struct Block
+    {
+        Block *next;
+    };
+
+    struct HotZone {
+        T* start = nullptr;
+        size_t used = 0;
+        size_t capacity = hotZoneSize / sizeof(T);
+
+        HotZone() {
+            // 使用 aligned_alloc 确保内存对齐
+            start = reinterpret_cast<T*>(aligned_alloc(alignof(T), hotZoneSize));
+        }
+
+        ~HotZone() {
+            free(start);  // 使用 free 释放 aligned_alloc 分配的内存
+        }
+    };
+
+    class Buffer
+    {
+        static const std::size_t blockSize = sizeof(T) > sizeof(Block) ? sizeof(T) : sizeof(Block);
+        uint8_t data[blockSize * growSize];
+
+        public:
+
+            Buffer *const next;
+
+            Buffer(Buffer *next) :
+                next(next)
+            {
+            }
+
+            T *getBlock(std::size_t index)
+            {
+                return reinterpret_cast<T *>(&data[blockSize * index]);
+            }
+    };
+
+    Block *firstFreeBlock = nullptr;
+    Buffer *firstBuffer = nullptr;
+    HotZone hotZone;
+    std::size_t bufferedBlocks = growSize;
+
+    public:
+
+        MemoryPool() = default;
+        MemoryPool(MemoryPool &&memoryPool) = delete;
+        MemoryPool(const MemoryPool &memoryPool) = delete;
+        MemoryPool operator =(MemoryPool &&memoryPool) = delete;
+        MemoryPool operator =(const MemoryPool &memoryPool) = delete;
+
+        ~MemoryPool()
+        {
+            while (firstBuffer) {
+                Buffer *buffer = firstBuffer;
+                firstBuffer = buffer->next;
+                delete buffer;
+            }
+        }
+
+        T* allocateFromBuffer()
+        {
+            if (bufferedBlocks >= growSize) {
+                firstBuffer = new Buffer(firstBuffer);
+                bufferedBlocks = 0;
+            }
+
+            return firstBuffer->getBlock(bufferedBlocks++);
+        }
+
+        T *allocate()
+        {
+            if (hotZone.used < hotZone.capacity) {
+                return hotZone.start + hotZone.used++;
+            }
+
+            if (firstFreeBlock) {
+                Block *block = firstFreeBlock;
+                firstFreeBlock = block->next;
+                return reinterpret_cast<T *>(block);
+            }
+
+            if (bufferedBlocks >= growSize) {
+                firstBuffer = new Buffer(firstBuffer);
+                bufferedBlocks = 0;
+            }
+
+            return firstBuffer->getBlock(bufferedBlocks++);
+        }
+
+        void deallocate(T *pointer)
+        {
+            if (pointer >= hotZone.start && 
+                pointer < hotZone.start + hotZone.capacity) {
+                if (pointer == hotZone.start + hotZone.used - 1) {
+                    hotZone.used--;
+                }
+                return;
+            }
+
+            Block *block = reinterpret_cast<Block *>(pointer);
+            block->next = firstFreeBlock;
+            firstFreeBlock = block;
+        }
+};
+
+template <class T, std::size_t growSize = 1024>
+class Allocator : private MemoryPool<T, growSize>
+{
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
+    Allocator *copyAllocator = nullptr;
+    std::allocator<T> *rebindAllocator = nullptr;
+#endif
+
+    public:
+
+        typedef std::size_t size_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef T *pointer;
+        typedef const T *const_pointer;
+        typedef T &reference;
+        typedef const T &const_reference;
+        typedef T value_type;
+
+        template <class U>
+        struct rebind
+        {
+            typedef Allocator<U, growSize> other;
+        };
+
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
+        Allocator() = default;
+
+        Allocator(Allocator &allocator) :
+            copyAllocator(&allocator)
+        {
+        }
+
+        template <class U>
+        Allocator(const Allocator<U, growSize> &other)
+        {
+            if (!std::is_same<T, U>::value)
+                rebindAllocator = new std::allocator<T>();
+        }
+
+        ~Allocator()
+        {
+            delete rebindAllocator;
+        }
+#endif
+
+        pointer allocate(size_type n, const void *hint = 0)
+        {
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
+            if (copyAllocator)
+                return copyAllocator->allocate(n, hint);
+
+            if (rebindAllocator)
+                return rebindAllocator->allocate(n, hint);
+#endif
+
+            if (n != 1 || hint)
+                throw std::bad_alloc();
+
+            return MemoryPool<T, growSize>::allocate();
+        }
+
+        void deallocate(pointer p, size_type n)
+        {
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
+            if (copyAllocator) {
+                copyAllocator->deallocate(p, n);
+                return;
+            }
+
+            if (rebindAllocator) {
+                rebindAllocator->deallocate(p, n);
+                return;
+            }
+#endif
+
+            MemoryPool<T, growSize>::deallocate(p);
+        }
+
+        void construct(pointer p, const_reference val)
+        {
+            new (p) T(val);
+        }
+
+        void destroy(pointer p)
+        {
+            p->~T();
+        }
+};
+
+
+
 }  // namespace mstl
 
 #endif  // __MSGI_STL_INTERNAL_ALLOCATOR_H

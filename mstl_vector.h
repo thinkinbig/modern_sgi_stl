@@ -340,6 +340,145 @@ void Vector<T, Alloc>::insertAux(Iterator position, U&& x) {
         kEndOfStorage = newStart + len;
     }
 }
+
+template <typename T, size_t N, typename Alloc = std::allocator<T>>
+class SmallVector {
+   alignas(T) unsigned char stack_[sizeof(T) * N];
+   T* data_;
+   size_t size_;
+   size_t capacity_;
+   Alloc allocator_;
+   bool on_stack() const { return data_ == reinterpret_cast<const T*>(stack_); }
+   void move_to_heap(size_t new_cap) {
+      T* new_data = std::allocator_traits<Alloc>::allocate(allocator_, new_cap);
+      for (size_t i = 0; i < size_; ++i)
+         std::allocator_traits<Alloc>::construct(allocator_, new_data + i, std::move(data_[i]));
+      for (size_t i = 0; i < size_; ++i)
+         std::allocator_traits<Alloc>::destroy(allocator_, data_ + i);
+      if (!on_stack()) std::allocator_traits<Alloc>::deallocate(allocator_, data_, capacity_);
+      data_ = new_data;
+      capacity_ = new_cap;
+   }
+
+   public:
+   using value_type = T;
+   using size_type = size_t;
+   using difference_type = std::ptrdiff_t;
+   using reference = T&;
+   using const_reference = const T&;
+   using pointer = T*;
+   using const_pointer = const T*;
+   using iterator = T*;
+   using const_iterator = const T*;
+   using allocator_type = Alloc;
+
+   SmallVector() : data_(reinterpret_cast<T*>(stack_)), size_(0), capacity_(N), allocator_() {}
+   explicit SmallVector(const Alloc& alloc) : data_(reinterpret_cast<T*>(stack_)), size_(0), capacity_(N), allocator_(alloc) {}
+   ~SmallVector() {
+      for (size_t i = 0; i < size_; ++i)
+         std::allocator_traits<Alloc>::destroy(allocator_, data_ + i);
+      if (!on_stack()) std::allocator_traits<Alloc>::deallocate(allocator_, data_, capacity_);
+   }
+   SmallVector(const SmallVector&) = delete;
+   SmallVector& operator=(const SmallVector&) = delete;
+
+   SmallVector(SmallVector&& other) noexcept
+      : data_(reinterpret_cast<T*>(stack_)), size_(0), capacity_(N), allocator_(std::move(other.allocator_)) {
+      if (other.on_stack()) {
+         reserve(other.size_);
+         for (size_t i = 0; i < other.size_; ++i) {
+            std::allocator_traits<Alloc>::construct(allocator_, data_ + i, std::move(other.data_[i]));
+            ++size_;
+         }
+      } else {
+         data_ = other.data_;
+         size_ = other.size_;
+         capacity_ = other.capacity_;
+         other.data_ = reinterpret_cast<T*>(other.stack_);
+         other.size_ = 0;
+         other.capacity_ = N;
+      }
+   }
+
+   SmallVector& operator=(SmallVector&& other) noexcept {
+      if (this != &other) {
+         for (size_t i = 0; i < size_; ++i)
+            std::allocator_traits<Alloc>::destroy(allocator_, data_ + i);
+         if (!on_stack()) std::allocator_traits<Alloc>::deallocate(allocator_, data_, capacity_);
+
+         allocator_ = std::move(other.allocator_);
+         if (other.on_stack()) {
+            data_ = reinterpret_cast<T*>(stack_);
+            capacity_ = N;
+            reserve(other.size_);
+            for (size_t i = 0; i < other.size_; ++i) {
+               std::allocator_traits<Alloc>::construct(allocator_, data_ + i, std::move(other.data_[i]));
+            }
+            size_ = other.size_;
+         } else {
+            data_ = other.data_;
+            size_ = other.size_;
+            capacity_ = other.capacity_;
+            other.data_ = reinterpret_cast<T*>(other.stack_);
+            other.size_ = 0;
+            other.capacity_ = N;
+         }
+      }
+      return *this;
+   }
+
+   size_type size() const { return size_; }
+   size_type capacity() const { return capacity_; }
+   bool empty() const { return size_ == 0; }
+   void reserve(size_type n) {
+      if (n > capacity_) move_to_heap(std::max(n, 2 * capacity_));
+   }
+
+   void pop_back() {
+      if (size_ > 0) {
+         std::allocator_traits<Alloc>::destroy(allocator_, data_ + size_ - 1);
+         --size_;
+      }
+   }
+
+   void resize(size_type n) {
+      reserve(n);
+      if (n > size_)
+         for (size_t i = size_; i < n; ++i) std::allocator_traits<Alloc>::construct(allocator_, data_ + i);
+      else
+         for (size_t i = n; i < size_; ++i) std::allocator_traits<Alloc>::destroy(allocator_, data_ + i);
+      size_ = n;
+   }
+   void push_back(const T& v) {
+      if (size_ == capacity_) reserve(size_ + 1);
+      std::allocator_traits<Alloc>::construct(allocator_, data_ + size_, v);
+      ++size_;
+   }
+   void push_back(T&& v) {
+      if (size_ == capacity_) reserve(size_ + 1);
+      std::allocator_traits<Alloc>::construct(allocator_, data_ + size_, std::move(v));
+      ++size_;
+   }
+   reference operator[](size_type i) { return data_[i]; }
+   const_reference operator[](size_type i) const { return data_[i]; }
+   pointer data() { return data_; }
+   const_pointer data() const { return data_; }
+   void clear() {
+      for (size_t i = 0; i < size_; ++i)
+         std::allocator_traits<Alloc>::destroy(allocator_, data_ + i);
+      size_ = 0;
+   }
+
+   // 迭代器接口
+   iterator begin() { return data_; }
+   iterator end() { return data_ + size_; }
+   const_iterator begin() const { return data_; }
+   const_iterator end() const { return data_ + size_; }
+   const_iterator cbegin() const { return data_; }
+   const_iterator cend() const { return data_ + size_; }
+
+   allocator_type get_allocator() const { return allocator_; }
+};
 }  // namespace mstl
 
 #endif
